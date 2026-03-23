@@ -26,7 +26,7 @@ body {
 }
 
 .container {
-  max-width: 550px;
+  max-width: 600px;
   width: 100%;
   padding: 10px;
   display: flex;
@@ -124,7 +124,7 @@ button {
 <div id="playersContainer"></div>
 <input id="limit" type="number" value="81">
 <input id="winners" type="number" value="3">
-<input id="password" type="password">
+<input id="password" type="password" placeholder="Password admin">
 <button onclick="saveTable()">Salva Tavolo</button>
 </div>
 
@@ -132,14 +132,12 @@ button {
 <h3>Tavoli creati</h3>
 <div id="tables"></div>
 
-<!-- NUOVO PULSANTE -->
-<button onclick="goToStorico()">Salva Dati</button>
+<button onclick="goToStorico()">Vai a Storico Admin</button>
 </div>
 
 </div>
 
 <script>
-// ===== VARIABILI =====
 let editingId = null;
 let selectedOrder = [];
 const playersContainer = document.getElementById("playersContainer");
@@ -231,9 +229,12 @@ function saveTable(){
   db.ref("tables/"+id).once("value").then(snap => {
     const old = snap.val() || {};
 
+    // ✅ Salva solo i nomi dei giocatori
+    const playersObj = selectedOrder.map(p => ({ name: String(p) }));
+
     db.ref("tables/"+id).set({
       name: nome || "Tavolo",
-      players: selectedOrder.map(p => String(p)),
+      players: playersObj,
       limit: limitVal || 81,
       winners: winnersVal || 3,
       password: passwordVal || "",
@@ -265,14 +266,14 @@ function editTable(id){
     document.getElementById("winners").value = t.winners || 3;
     document.getElementById("password").value = t.password || "";
 
-    selectedOrder = (t.players || []).map(p => String(p));
+    selectedOrder = (t.players || []).map(p => p.name);
     aggiornaUI();
 
     scrollTo(0,0);
   });
 }
 
-// ===== VISUALIZZA =====
+// ===== VISUALIZZA TAVOLI =====
 db.ref("tables").on("value", snap => {
   const tables = snap.val() || {};
   tablesDiv.innerHTML = "";
@@ -281,7 +282,7 @@ db.ref("tables").on("value", snap => {
     const t = tables[id];
 
     const list = (t.players || []).map((p,idx) => {
-      return `<li>${idx+1}. ${p}</li>`;
+      return `<li>${idx+1}. ${p.name}</li>`;
     }).join("");
 
     tablesDiv.innerHTML += `
