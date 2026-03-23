@@ -36,11 +36,6 @@ h2 {
     border-radius: 8px;
 }
 
-.table b {
-    color: #333;
-    font-size: 16px;
-}
-
 .players-list {
     margin: 8px 0;
     display: flex;
@@ -67,7 +62,6 @@ h2 {
     flex: 1;
     border-bottom: 2px dotted #bbb;
     margin: 0 8px;
-    height: 0;
 }
 
 .player-score {
@@ -80,12 +74,12 @@ h2 {
 .hands-history {
     font-size: 13px;
     margin-top: 10px;
-    overflow-x: auto;   /* scroll orizzontale */
+    overflow-x: auto;
 }
 
 .hands-history table {
     width: 100%;
-    min-width: 300px;  /* evita di diventare troppo piccola */
+    min-width: 300px;
     border-collapse: collapse;
 }
 
@@ -93,7 +87,7 @@ h2 {
     padding: 4px 6px;
     border: 1px solid #ccc;
     text-align: center;
-    font-size: 12px;   /* più leggibile su mobile */
+    font-size: 12px;
 }
 
 .eliminated {
@@ -121,7 +115,6 @@ button {
     background: #1a73e8;
     color: white;
     cursor: pointer;
-    transition: 0.2s;
 }
 
 button:hover {
@@ -133,12 +126,6 @@ p.empty {
     text-align:center;
     margin:20px 0;
 }
-
-/* Mobile */
-@media(max-width: 500px){
-    .btn-container { flex-direction: column; }
-    button { width: 100%; }
-}
 </style>
 
 <!-- Firebase -->
@@ -147,22 +134,17 @@ p.empty {
 
 <script>
 const firebaseConfig = {
-  apiKey: "AIzaSyBSqc3y7CdmdsW86c5ZXPmnKOIdwcaJSTM",
+  apiKey: "AIzaSy...",
   authDomain: "giornaliero-tressetteaperdere.firebaseapp.com",
   databaseURL: "https://giornaliero-tressetteaperdere-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "giornaliero-tressetteaperdere",
-  storageBucket: "giornaliero-tressetteaperdere.firebasestorage.app",
-  messagingSenderId: "630006722305",
-  appId: "1:630006722305:web:8c09a17747edaab5fc7500"
 };
 
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
-}
+firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 </script>
-
 </head>
+
 <body>
 
 <div class="card">
@@ -179,118 +161,69 @@ db.ref("tables").on("value", snap => {
     const tables = snap.val() || {};
     tablesDiv.innerHTML = "";
 
-    const keys = Object.keys(tables);
-    if(keys.length === 0){
-        tablesDiv.innerHTML = '<p class="empty">Nessun tavolo disponibile.</p>';
-        return;
-    }
-
-    keys.forEach(id => {
+    Object.keys(tables).forEach(id => {
         const t = tables[id];
+
         const div = document.createElement("div");
         div.className = "table";
 
         div.innerHTML = `
             <b>${t.name || "Tavolo"}</b>
+
             <div class="players-list" id="players-${id}">
-                Caricamento giocatori...
+                Caricamento...
             </div>
+
             <div class="hands-history" id="hands-${id}">
-                Caricamento storico mani...
+                Caricamento...
             </div>
-            <div class="info">Limite punti: ${t.limit || 0} | Vincitori: ${t.winners || 0}</div>
+
+            <div class="info">
+                Limite punti: ${t.limit || 0} | Vincitori: ${t.winners || 0}
+            </div>
+
             <div class="btn-container">
                 <button onclick="enterAdmin('${id}')">Segnapunti</button>
                 <button onclick="enterVisitor('${id}')">Vai al Tavolo</button>
+                <button onclick="openHistory('${id}')">Storico dati</button>
             </div>
         `;
+
         tablesDiv.appendChild(div);
-
-        db.ref(`tables/${id}/players`).on("value", snapPlayers => {
-            const players = snapPlayers.val();
-            let playersArray = Array.isArray(players) 
-                ? players 
-                : (players && typeof players === "object" ? Object.values(players) : []);
-
-            // Controllo partita finita
-            const gameOver = playersArray.filter(p => (p.score||0) < (t.limit||0)).length <= (t.winners||1);
-            if(gameOver){
-                // Ordina dal punteggio più basso al più alto
-                playersArray.sort((a,b) => (a.score||0) - (b.score||0));
-            }
-
-            // Lista giocatori
-            const container = document.getElementById(`players-${id}`);
-            if(playersArray.length === 0){
-                container.innerHTML = '<p class="empty">Nessun giocatore</p>';
-            } else {
-                const html = playersArray.map((p, i) => {
-                    let nome = "", score = 0;
-                    if(typeof p === "string"){ nome = p; } 
-                    else if(p){ nome = p.name || "Giocatore"; score = p.score || 0; }
-                    const playerClass = (score >= (t.limit || 0)) ? "eliminated" : "";
-                    return `
-                        <div class="player-row ${playerClass}">
-                            <span class="player-name">${i + 1}. ${nome}</span>
-                            <span class="dots"></span>
-                            <span class="player-score">${score}</span>
-                        </div>
-                    `;
-                }).join("");
-                container.innerHTML = html;
-            }
-
-            // Storico mani
-            const handsDiv = document.getElementById(`hands-${id}`);
-            if(playersArray.length === 0){
-                handsDiv.innerHTML = '<p class="empty">Nessuna mano giocata</p>';
-                return;
-            }
-            const maxHands = Math.max(...playersArray.map(p => (p.playerHistory || []).length));
-            if(maxHands === 0){
-                handsDiv.innerHTML = '<p class="empty">Nessuna mano giocata</p>';
-                return;
-            }
-
-            let handsHtml = '<div style="overflow-x:auto;"><table>';
-            handsHtml += '<thead><tr><th>Mano</th>';
-            playersArray.forEach(p => handsHtml += `<th>${p.name}</th>`);
-            handsHtml += '</tr></thead><tbody>';
-
-            for(let i = 0; i < maxHands; i++){
-                handsHtml += `<tr><td>${i+1}</td>`;
-                playersArray.forEach(p => {
-                    const score = (p.playerHistory && p.playerHistory[i] != null) ? p.playerHistory[i] : "-";
-                    handsHtml += `<td>${score}</td>`;
-                });
-                handsHtml += '</tr>';
-            }
-            handsHtml += '</tbody></table></div>';
-            handsDiv.innerHTML = handsHtml;
-        });
     });
 });
+
+// 🔹 NUOVA FUNZIONE
+function openHistory(id){
+    db.ref(`tables/${id}`).once("value").then(snapshot => {
+        const t = snapshot.val() || {};
+
+        localStorage.setItem("tableID", id);
+        localStorage.setItem("tableName", t.name || "Tavolo");
+
+        window.location.href = "storicoUtente.html";
+    });
+}
 
 function enterAdmin(id){
     db.ref(`tables/${id}`).once("value").then(snapshot => {
         const t = snapshot.val() || {};
-        const pwdInput = prompt("Inserisci password admin:");
-        if(pwdInput === null) return;
-        const passwordDB = String(t.password || "").trim();
-        const passwordINSERITA = String(pwdInput).trim();
-        if(passwordINSERITA === passwordDB){
+        const pwd = prompt("Inserisci password admin:");
+
+        if(pwd === t.password){
             localStorage.setItem("tableID", id);
-            localStorage.setItem("tableName", t.name || "Tavolo");
             window.location.href = "tresetteaPerdere.html";
-        } else { alert("Password errata!"); }
+        } else {
+            alert("Password errata!");
+        }
     });
 }
 
 function enterVisitor(id){
     db.ref(`tables/${id}`).once("value").then(snapshot => {
         const t = snapshot.val() || {};
+
         localStorage.setItem("tableID", id);
-        localStorage.setItem("tableName", t.name || "Tavolo");
         window.location.href = "visitatore.html";
     });
 }
