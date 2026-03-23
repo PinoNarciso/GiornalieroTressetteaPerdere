@@ -105,9 +105,9 @@ button {
 .players-list {
   list-style: none;
   padding: 0;
-  margin: 0 auto;   /* mantiene centrata la lista nella card */
-  max-width: 90%;   /* larghezza contenuta */
-  text-align: left; /* allinea nomi a sinistra */
+  margin: 0 auto;
+  max-width: 90%;
+  text-align: left;
 }
 </style>
 </head>
@@ -131,6 +131,9 @@ button {
 <div class="card">
 <h3>Tavoli creati</h3>
 <div id="tables"></div>
+
+<!-- NUOVO PULSANTE -->
+<button onclick="goToStorico()">Salva Dati</button>
 </div>
 
 </div>
@@ -255,13 +258,16 @@ function editTable(id){
   db.ref("tables/"+id).once("value").then(snap => {
     const t = snap.val();
     if(!t) return;
+
     editingId = id;
     document.getElementById("name").value = t.name || "";
     document.getElementById("limit").value = t.limit || 81;
     document.getElementById("winners").value = t.winners || 3;
     document.getElementById("password").value = t.password || "";
-    selectedOrder = (t.players || []).map(p => typeof p === "object" ? String(p.name || "") : String(p));
+
+    selectedOrder = (t.players || []).map(p => String(p));
     aggiornaUI();
+
     scrollTo(0,0);
   });
 }
@@ -270,12 +276,14 @@ function editTable(id){
 db.ref("tables").on("value", snap => {
   const tables = snap.val() || {};
   tablesDiv.innerHTML = "";
+
   for(let id in tables){
     const t = tables[id];
+
     const list = (t.players || []).map((p,idx) => {
-      let nome = typeof p === "object" ? p.name : p;
-      return `<li>${idx+1}. ${nome}</li>`;
+      return `<li>${idx+1}. ${p}</li>`;
     }).join("");
+
     tablesDiv.innerHTML += `
       <div class="card">
         <b>${t.name}</b>
@@ -288,6 +296,11 @@ db.ref("tables").on("value", snap => {
       </div>`;
   }
 });
+
+// ===== NUOVA FUNZIONE =====
+function goToStorico(){
+  window.location.href = "storicoAdmin.html";
+}
 </script>
 
 </body>
