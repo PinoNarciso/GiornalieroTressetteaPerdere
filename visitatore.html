@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tressette a Perdere - Pino Narciso</title>
+
+<style>
+:root{
+--primary:#2c3e50;
+--danger:#e74c3c;
+--warning:#f39c12;
+--success:#27ae60;
+--accent:#3498db;
+--info:#34b7f1;
+}
+
+body{
+font-family:Segoe UI;
+background:#f0f2f5;
+margin:0;
+padding:10px;
+display:flex;
+flex-direction:column;
+align-items:center;
+}
+
+.card{
+background:white;
+padding:15px;
+border-radius:12px;
+box-shadow:0 4px 10px rgba(0,0,0,0.1);
+width:100%;
+max-width:520px;
+margin-bottom:15px;
+}
+
+h1{
+text-align:center;
+font-size:1.3rem;
+color:var(--primary);
+}
+
+button{
+width:100%;
+padding:10px;
+border:none;
+border-radius:8px;
+color:white;
+font-weight:bold;
+margin-bottom:6px;
+cursor:pointer;
+}
+
+/* Nascondiamo i pulsanti di controllo gioco e gli input */
+.btn-cap, .btn-rete, .btn-undo, #confirm-btn, .score-in {
+    display: none !important;
+}
+
+.btn-share{background:var(--accent);}
+
+.player-row{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:6px 0;
+border-bottom:1px solid #eee;
+}
+
+.leader{
+background:#fff3cd;
+border-left:4px solid #f39c12;
+}
+
+.sum-check{
+display: none; /* Nascondiamo il controllo somma */
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+table-layout:fixed;
+}
+
+th,td{
+padding:6px;
+font-size:0.8rem;
+text-align:center;
+border-bottom:1px solid #eee;
+}
+
+th:nth-child(2),td:nth-child(2){
+text-align:left;
+width:90px;
+}
+
+.history-scroll-cell{
+display:flex;
+gap:8px;
+overflow-x:auto;
+padding:4px 0;
+}
+
+.badge-container{
+display:flex;
+flex-direction:column;
+align-items:center;
+min-width:24px;
+}
+
+.hand-num{
+display:flex;
+align-items:center;
+justify-content:center;
+width:20px;
+height:20px;
+border-radius:50%;
+background:#ddd;
+font-size:0.7rem;
+font-weight:bold;
+margin-bottom:2px;
+}
+
+.badge{
+padding:4px 6px;
+border-radius:6px;
+font-size:0.75rem;
+}
+
+.temp-winner{background:#e8f9ee;border-left:4px solid #27ae60;}
+.eliminated{background:#fdf2f2;color:#aaa;text-decoration:line-through;}
+.hidden{display:none}
+
+footer{
+font-size:0.7rem;
+text-align:center;
+color:#777;
+margin:20px 0;
+}
+</style>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+</head>
+<body>
+
+<div class="card hidden" id="game">
+<h1 id="displayTableName"></h1>
+
+<div id="inputs-area"></div>
+
+<div id="sum-display" class="sum-check">Somma: 0 / 21</div>
+
+<!-- Pulsante disabilitato visivamente tramite CSS sopra -->
+<button id="confirm-btn" disabled>Conferma Mano</button>
+
+<h3>Classifica e storico</h3>
+<table>
+<thead>
+<tr>
+<th>N</th><th>Nome</th><th>Punti</th><th>Storico</th>
+</tr>
+</thead>
+<tbody id="ranking-body"></tbody>
+</table>
+
+<div style="margin-top:15px">
+<button class="btn-share" onclick="shareResults()">📤 Condividi risultati</button>
+<!-- Il tasto undo è stato rimosso -->
+</div>
+</div>
+
+<footer>© 2026 - Pino Narciso</footer>
+
+<script>
+// Manteniamo la logica Firebase per visualizzare i dati, 
+// ma le funzioni di modifica non verranno richiamate dai tasti rimossi.
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAeZiPDG89tRz3QeFBhh3wWLkGtjoFGiXA",
+  authDomain: "campinato-tresette-a-perdere.firebaseapp.com",
+  databaseURL: "https://campinato-tresette-a-perdere-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "campinato-tresette-a-perdere",
+  storageBucket: "campinato-tresette-a-perdere.firebasedastorage.app",
+  messagingSenderId: "105475040052",
+  appId: "1:105475040052:web:631c46b7d47cd8b333bb61"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let players=[], history=[], limit=81, tableName="", winners=1, dealerIndex=-1;
+
+window.onload = function(){ start(); }
+
+function start(){
+    const tableId = localStorage.getItem("tableID");
+    tableName = localStorage.getItem("tableName");
+
+    if(!tableId || !tableName){
+        alert("ID o nome tavolo non trovato.");
+        window.location.href = "index.html";
+        return;
+    }
+
+    document.getElementById("displayTableName").innerText = tableName;
+    document.getElementById("game").classList.remove("hidden");
+
+    db.ref("tables/" + tableId).on("value", snapshot=>{
+        if(snapshot.exists()){
+            const data = snapshot.val();
+            loadDataFromFirebase(data);
+        }
+    });
+}
+
+function loadDataFromFirebase(data){
+    players = [];
+    if(data.players){
+        if(Array.isArray(data.players)){
+            players = data.players.map((p,i)=>({
+                id:i,
+                name:p.name || p,
+                score:p.score || 0,
+                active:p.active !== undefined ? p.active : true,
+                playerHistory:p.playerHistory || []
+            }));
+        } else {
+            players = Object.keys(data.players).map((key,i)=>{
+                const p = data.players[key];
+                return {
+                    id:i,
+                    name:p.name || p,
+                    score:p.score || 0,
+                    active:p.active !== undefined ? p.active : true,
+                    playerHistory:p.playerHistory || []
+                };
+            });
+        }
+    }
+    history = data.history || [];
+    limit = data.limit || 81;
+    winners = data.winners || 1;
+    dealerIndex = data.dealerIndex ?? -1;
+
+    render();
+}
+
+function render(){
+    const area = document.getElementById("inputs-area");
+    area.innerHTML="";
+    players.filter(p=>p.active).forEach(p=>{
+        const isDealer=(dealerIndex!=-1 && players[dealerIndex].id===p.id)?"leader":"";
+        area.innerHTML+=`
+        <div class="player-row ${isDealer}">
+            <span>${p.name} ${isDealer?"★":""}</span>
+        </div>`;
+    });
+    renderRanking();
+}
+
+function renderRanking(){
+    const tbody = document.getElementById("ranking-body");
+    tbody.innerHTML = "";
+    
+    let sorted = [...players].sort((a,b) => a.score - b.score);
+    
+    sorted.forEach((p, index) => {
+        let historyHtml = "";
+        if(p.playerHistory){
+            p.playerHistory.forEach((val, i) => {
+                historyHtml += `
+                <div class="badge-container">
+                    <span class="hand-num">${i+1}</span>
+                    <span class="badge" style="background:#eee">${val}</span>
+                </div>`;
+            });
+        }
+
+        tbody.innerHTML += `
+        <tr class="${!p.active ? 'eliminated' : ''}">
+            <td>${index + 1}</td>
+            <td>${p.name}</td>
+            <td><strong>${p.score}</strong></td>
+            <td><div class="history-scroll-cell">${historyHtml}</div></td>
+        </tr>`;
+    });
+}
+
+function shareResults(){
+    let text = `Classifica ${tableName}:\n`;
+    players.sort((a,b)=>a.score-b.score).forEach((p,i)=>{
+        text += `${i+1}. ${p.name}: ${p.score}pt ${!p.active?'(EL)':''}\n`;
+    });
+    if(navigator.share){
+        navigator.share({title: 'Risultati Tressette', text: text});
+    } else {
+        alert(text);
+    }
+}
+</script>
+</body>
+</html>
