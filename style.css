@@ -1,39 +1,111 @@
+body {
+    font-family:'Segoe UI', sans-serif;
+    background:#f0f2f5;
+    padding:20px;
+    display:flex;
+    justify-content:center;
+}
 
-body{
-font-family:Segoe UI, Arial;
-background:#f0f2f5;
-display:flex;
-justify-content:center;
-padding:30px;
+.card {
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    width:100%;
+    max-width:1200px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.1);
 }
-.card{
-background:white;
-padding:20px;
-border-radius:10px;
-width:420px;
-box-shadow:0 4px 10px rgba(0,0,0,0.1);
-margin-bottom:20px;
+
+h2 {
+    text-align:center;
+    color:#1a73e8;
+    margin-bottom:15px;
 }
-input{
-width:100%;
-padding:8px;
-margin-top:6px;
+
+.tables-grid {
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:15px;
+    margin-bottom:20px;
 }
-button{
-width:100%;
-padding:10px;
-border:none;
-border-radius:6px;
-background:#27ae60;
-color:white;
-cursor:pointer;
-margin-top:6px;
+
+.table {
+    background:#f8f9fa;
+    padding:12px;
+    border-radius:8px;
+    min-height:150px;
 }
-.table{
-border-bottom:1px solid #eee;
-padding:10px 0;
+
+.player-row {
+    display:flex;
+    align-items:center;
+    margin:2px 0;
+    font-size:14px;
 }
-.viewer{
-background:#ddd;
-color:#333;
+
+.player-name {
+    max-width:60%;
+    white-space: nowrap;       /* Non andare a capo */
+    overflow: hidden;          /* Nasconde il testo in eccesso */
+    text-overflow: ellipsis;   /* Mostra ... se troppo lungo */
+}
+
+.dots {
+    flex:1;
+    border-bottom:2px dotted #bbb;
+    margin:0 6px;
+}
+
+.player-score {
+    font-weight:bold;
+    color:#1a73e8;
+}
+
+.eliminated {
+    text-decoration:line-through;
+    color:#aaa;
+}
+
+.hands-history table {
+    width:100%;
+    border-collapse:collapse;
+    margin-top:5px;
+    font-size:12px;
+}
+
+.hands-history td, .hands-history th {
+    border:1px solid #ccc;
+    padding:3px;
+    text-align:center;
+}
+
+#storico-list div.archive-row{
+    margin:3px 0;
+    display:flex;
+    align-items:center;
+    gap:5px;
+}
+
+#storico-list span{
+    flex:1;
+    font-weight:bold;
+    color:#1a73e8;
+}
+
+#storico-list button{
+    padding:5px 10px;
+    border-radius:5px;
+    border:none;
+    cursor:pointer;
+    background:#1a73e8;
+    color:white;
+}
+
+#loading-msg {
+    text-align:center;
+    margin:10px 0;
+    color:#555;
+}
+
+.detail-row {
+    margin-bottom:10px;
 }
