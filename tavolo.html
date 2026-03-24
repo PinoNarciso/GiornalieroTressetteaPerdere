@@ -3,16 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <title>Admin Tavoli Tressette</title>
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <script src="firebase.js"></script>
-
-<!-- Excel -->
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
 <style>
 * { box-sizing: border-box; }
@@ -29,9 +25,6 @@ body {
   max-width: 600px;
   width: 100%;
   padding: 10px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
 }
 
 .card {
@@ -39,7 +32,6 @@ body {
   padding: 15px;
   border-radius: 10px;
   margin-bottom: 20px;
-  width: 100%;
   text-align: center;
 }
 
@@ -65,10 +57,6 @@ button {
   flex: 1;
 }
 
-#tables {
-  width: 100%;
-}
-
 /* Lista giocatori */
 #playersContainer {
   max-height: 250px;
@@ -80,6 +68,7 @@ button {
 .player-item {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   padding: 10px;
   border-bottom: 1px solid #eee;
   cursor: pointer;
@@ -106,7 +95,6 @@ button {
   list-style: none;
   padding: 0;
   margin: 0 auto;
-  max-width: 90%;
   text-align: left;
 }
 </style>
@@ -116,18 +104,33 @@ button {
 
 <div class="container">
 
+<!-- GESTIONE GIOCATORI -->
+<div class="card">
+<h3>Gestione Giocatori</h3>
+
+<input id="searchPlayer" placeholder="Cerca giocatore..." oninput="filterPlayers()">
+
+<div style="display:flex; gap:5px;">
+  <input id="newPlayer" placeholder="Nome giocatore">
+  <button onclick="addPlayer()">➕</button>
+</div>
+
+<div id="playersContainer"></div>
+</div>
+
+<!-- TAVOLO -->
 <div class="card">
 <h2>Crea / Modifica Tavolo</h2>
 
 <input id="name" value="Tavolo 1">
-<input type="file" id="fileInput">
-<div id="playersContainer"></div>
 <input id="limit" type="number" value="81">
 <input id="winners" type="number" value="3">
 <input id="password" type="password" placeholder="Password admin">
+
 <button onclick="saveTable()">Salva Tavolo</button>
 </div>
 
+<!-- LISTA TAVOLI -->
 <div class="card">
 <h3>Tavoli creati</h3>
 <div id="tables"></div>
@@ -140,40 +143,81 @@ button {
 <script>
 let editingId = null;
 let selectedOrder = [];
+let allPlayers = [];
+let editingPlayerId = null;
+
 const playersContainer = document.getElementById("playersContainer");
 const tablesDiv = document.getElementById("tables");
 
-// ===== POPOLA GIOCATORI =====
-function populatePlayers(playersArray){
-  playersContainer.innerHTML = "";
-  selectedOrder = [];
+// ===== CARICA GIOCATORI =====
+function loadPlayersFromDB(){
+  db.ref("players").on("value", snap => {
+    const data = snap.val() || {};
 
-  playersArray.forEach(nome => {
+    allPlayers = Object.entries(data).map(([id, p]) => ({
+      id,
+      name: p.name
+    }));
+
+    renderPlayers(allPlayers);
+  });
+}
+
+// ===== RENDER =====
+function renderPlayers(list){
+  playersContainer.innerHTML = "";
+
+  list.forEach(player => {
     const div = document.createElement("div");
     div.className = "player-item";
 
     const name = document.createElement("div");
-    name.textContent = nome;
+    name.textContent = player.name;
+
+    const actions = document.createElement("div");
+    actions.style.display = "flex";
+    actions.style.gap = "5px";
+
+    const editBtn = document.createElement("button");
+    editBtn.textContent = "✏️";
+    editBtn.onclick = (e) => {
+      e.stopPropagation();
+      editPlayer(player);
+    };
+
+    const delBtn = document.createElement("button");
+    delBtn.textContent = "🗑️";
+    delBtn.onclick = (e) => {
+      e.stopPropagation();
+      deletePlayer(player.id);
+    };
+
+    actions.appendChild(editBtn);
+    actions.appendChild(delBtn);
 
     const order = document.createElement("div");
     order.className = "player-order";
     order.style.display = "none";
 
     div.appendChild(name);
+    div.appendChild(actions);
     div.appendChild(order);
 
+    // selezione per tavolo
     div.onclick = () => {
-      const i = selectedOrder.indexOf(nome);
-      if(i === -1) selectedOrder.push(nome);
+      const i = selectedOrder.indexOf(player.name);
+      if(i === -1) selectedOrder.push(player.name);
       else selectedOrder.splice(i,1);
       aggiornaUI();
     };
 
     playersContainer.appendChild(div);
   });
+
+  aggiornaUI();
 }
 
-// ===== AGGIORNA UI =====
+// ===== UI SELEZIONE =====
 function aggiornaUI(){
   Array.from(playersContainer.children).forEach(item => {
     const nome = item.firstChild.textContent;
@@ -191,34 +235,52 @@ function aggiornaUI(){
   });
 }
 
-// ===== CARICA EXCEL =====
-fileInput.onchange = function(e){
-  const file = e.target.files[0];
-  if(!file) return;
+// ===== AGGIUNGI =====
+function addPlayer(){
+  const nome = document.getElementById("newPlayer").value.trim();
+  if(!nome) return alert("Inserisci nome");
 
-  const reader = new FileReader();
-  reader.onload = function(evt){
-    const data = new Uint8Array(evt.target.result);
-    const wb = XLSX.read(data, {type:'array'});
-    const sheet = wb.Sheets[wb.SheetNames[0]];
-    const json = XLSX.utils.sheet_to_json(sheet);
-    const arr = [];
-    json.forEach(r => { if(r.Giocatore) arr.push(String(r.Giocatore)); });
-    localStorage.setItem("lastPlayers", JSON.stringify(arr));
-    populatePlayers(arr);
-  };
-  reader.readAsArrayBuffer(file);
-};
+  const exists = allPlayers.some(p => p.name.toLowerCase() === nome.toLowerCase());
+  if(exists) return alert("Giocatore già esistente");
 
-// ===== AUTOLOAD =====
-window.onload = () => {
-  const p = localStorage.getItem("lastPlayers");
-  if(p) populatePlayers(JSON.parse(p));
-};
+  const id = editingPlayerId || ("player_" + Date.now());
+
+  db.ref("players/"+id).set({ name: nome });
+
+  document.getElementById("newPlayer").value = "";
+  editingPlayerId = null;
+}
+
+// ===== MODIFICA =====
+function editPlayer(player){
+  document.getElementById("newPlayer").value = player.name;
+  editingPlayerId = player.id;
+}
+
+// ===== ELIMINA =====
+function deletePlayer(id){
+  if(confirm("Eliminare giocatore?")){
+    db.ref("players/"+id).remove();
+  }
+}
+
+// ===== CERCA =====
+function filterPlayers(){
+  const text = document.getElementById("searchPlayer").value.toLowerCase();
+
+  const filtered = allPlayers.filter(p =>
+    p.name.toLowerCase().includes(text)
+  );
+
+  renderPlayers(filtered);
+}
 
 // ===== SALVA TAVOLO =====
 function saveTable(){
-  if(selectedOrder.length === 0){ alert("Seleziona giocatori"); return; }
+  if(selectedOrder.length === 0){
+    alert("Seleziona giocatori");
+    return;
+  }
 
   const id = editingId || ("table_" + Date.now());
   const nome = document.getElementById("name").value;
@@ -229,8 +291,7 @@ function saveTable(){
   db.ref("tables/"+id).once("value").then(snap => {
     const old = snap.val() || {};
 
-    // ✅ Salva solo i nomi dei giocatori
-    const playersObj = selectedOrder.map(p => ({ name: String(p) }));
+    const playersObj = selectedOrder.map(p => ({ name: p }));
 
     db.ref("tables/"+id).set({
       name: nome || "Tavolo",
@@ -249,18 +310,14 @@ function saveTable(){
   });
 }
 
-// ===== ELIMINA =====
-function deleteTable(id){
-  if(confirm("Eliminare?")){ db.ref("tables/"+id).remove(); }
-}
-
-// ===== MODIFICA =====
+// ===== TAVOLI =====
 function editTable(id){
   db.ref("tables/"+id).once("value").then(snap => {
     const t = snap.val();
     if(!t) return;
 
     editingId = id;
+
     document.getElementById("name").value = t.name || "";
     document.getElementById("limit").value = t.limit || 81;
     document.getElementById("winners").value = t.winners || 3;
@@ -273,7 +330,12 @@ function editTable(id){
   });
 }
 
-// ===== VISUALIZZA TAVOLI =====
+function deleteTable(id){
+  if(confirm("Eliminare?")){
+    db.ref("tables/"+id).remove();
+  }
+}
+
 db.ref("tables").on("value", snap => {
   const tables = snap.val() || {};
   tablesDiv.innerHTML = "";
@@ -281,9 +343,9 @@ db.ref("tables").on("value", snap => {
   for(let id in tables){
     const t = tables[id];
 
-    const list = (t.players || []).map((p,idx) => {
-      return `<li>${idx+1}. ${p.name}</li>`;
-    }).join("");
+    const list = (t.players || []).map((p,i) =>
+      `<li>${i+1}. ${p.name}</li>`
+    ).join("");
 
     tablesDiv.innerHTML += `
       <div class="card">
@@ -298,10 +360,15 @@ db.ref("tables").on("value", snap => {
   }
 });
 
-// ===== NUOVA FUNZIONE =====
+// ===== NAV =====
 function goToStorico(){
   window.location.href = "storicoAdmin.html";
 }
+
+// ===== START =====
+window.onload = () => {
+  loadPlayersFromDB();
+};
 </script>
 
 </body>
