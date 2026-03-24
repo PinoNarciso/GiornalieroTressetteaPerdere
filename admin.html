@@ -40,8 +40,8 @@ button { background:#3498db; color:white; border:none; cursor:pointer; }
 <div class="container" id="loginContainer">
   <div class="card">
     <h3>Login Admin</h3>
-    <input type="password" id="adminPassword" placeholder="Inserisci password">
-    <button onclick="login()">Accedi</button>
+ <input type="password" id="adminPassword" placeholder="Inserisci password" onkeydown="if(event.key==='Enter'){login();}">
+<button onclick="login()">Accedi</button>
     <div id="loginError"></div>
   </div>
 </div>
