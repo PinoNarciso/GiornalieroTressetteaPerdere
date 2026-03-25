@@ -141,7 +141,7 @@ margin:20px 0;
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-
+<script src="firebase.js"></script>
 </head>
 <body>
 
@@ -174,22 +174,6 @@ margin:20px 0;
 <footer>© 2026 - Pino Narciso</footer>
 
 <script>
-
-// ===== firebaseConfig =====
-const firebaseConfig = {
-  apiKey: "AIzaSyBSqc3y7CdmdsW86c5ZXPmnKOIdwcaJSTM",
-  authDomain: "giornaliero-tressetteaperdere.firebaseapp.com",
-  databaseURL: "https://giornaliero-tressetteaperdere-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "giornaliero-tressetteaperdere",
-  storageBucket: "giornaliero-tressetteaperdere.firebasestorage.app",
-  messagingSenderId: "630006722305",
-  appId: "1:630006722305:web:8c09a17747edaab5fc7500"
-};
-// ===== firebaseConfig =====
-
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-
 let players=[], history=[], limit=81, tableName="", winners=1, dealerIndex=-1;
 
 window.onload = function(){ start(); }
