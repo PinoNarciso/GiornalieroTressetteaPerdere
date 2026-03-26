@@ -9,20 +9,28 @@
 body {
     font-family:'Segoe UI', sans-serif;
     background:#f0f2f5;
-    padding:20px;
-    display:flex;
-    justify-content:center;
+    padding:10px;
+    margin:0;
 }
+
 .card {
     background:white;
-    padding:20px;
+    padding:15px;
     border-radius:12px;
     width:100%;
     max-width:1200px;
+    margin:auto;
     box-shadow:0 4px 12px rgba(0,0,0,0.1);
 }
-h2 { text-align:center; color:#1a73e8; margin-bottom:15px;}
 
+h2 {
+    text-align:center;
+    color:#1a73e8;
+    margin-bottom:15px;
+    font-size:20px;
+}
+
+/* GRID RESPONSIVE */
 .tables-grid {
     display:grid;
     grid-template-columns:repeat(3,1fr);
@@ -32,28 +40,30 @@ h2 { text-align:center; color:#1a73e8; margin-bottom:15px;}
 
 .table {
     background:#f8f9fa;
-    padding:12px;
+    padding:10px;
     border-radius:8px;
-    min-height:150px;
+    min-height:120px;
+    font-size:14px;
 }
 
-/* GRID PERFETTA CON PUNTINI */
+/* PLAYER ROW */
 .player-row {
     display:grid;
-    grid-template-columns: auto 1fr 60px; /* nome | puntini | punteggio */
+    grid-template-columns: auto 1fr 50px;
     align-items:center;
-    margin:2px 0;
-    font-size:14px;
+    margin:3px 0;
+    font-size:13px;
 }
 
 .player-name {
     overflow:hidden;
     white-space:nowrap;
+    text-overflow:ellipsis;
 }
 
 .dots {
     border-bottom:2px dotted #bbb;
-    margin:0 6px;
+    margin:0 5px;
     height:0;
 }
 
@@ -63,41 +73,65 @@ h2 { text-align:center; color:#1a73e8; margin-bottom:15px;}
     text-align:right;
 }
 
-.eliminated { text-decoration:line-through; color:#aaa; }
+.eliminated {
+    text-decoration:line-through;
+    color:#aaa;
+}
+
+/* TABELLA SCROLL */
+.hands-history {
+    overflow-x:auto;
+}
 
 .hands-history table {
     width:100%;
     border-collapse:collapse;
     margin-top:5px;
     font-size:12px;
+    min-width:400px;
 }
 
-.hands-history td, .hands-history th {
+.hands-history td,
+.hands-history th {
     border:1px solid #ccc;
-    padding:3px;
+    padding:4px;
     text-align:center;
 }
 
+/* STORICO */
 #storico-list div.archive-row{
-    margin:3px 0;
+    margin:5px 0;
     display:flex;
+    flex-wrap:wrap;
     align-items:center;
     gap:5px;
 }
 
 #storico-list span{
-    flex:1;
+    flex:1 1 100%;
     font-weight:bold;
     color:#1a73e8;
 }
 
+/* BOTTONI TOUCH */
 #storico-list button{
-    padding:5px 10px;
-    border-radius:5px;
+    padding:8px 10px;
+    border-radius:6px;
     border:none;
     cursor:pointer;
     background:#1a73e8;
     color:white;
+    font-size:13px;
+}
+
+/* INPUT */
+input[type="text"]{
+    width:100%;
+    padding:10px;
+    margin-bottom:10px;
+    border-radius:6px;
+    border:1px solid #ccc;
+    font-size:14px;
 }
 
 #loading-msg {
@@ -106,7 +140,36 @@ h2 { text-align:center; color:#1a73e8; margin-bottom:15px;}
     color:#555;
 }
 
-.detail-row { margin-bottom:10px; }
+.detail-row {
+    margin-bottom:10px;
+}
+
+/* MOBILE */
+@media (max-width:768px){
+
+    .tables-grid {
+        grid-template-columns:1fr;
+    }
+
+    .player-row {
+        grid-template-columns: auto 1fr 40px;
+        font-size:12px;
+    }
+
+    h2 {
+        font-size:18px;
+    }
+
+    .card {
+        padding:10px;
+    }
+
+    #storico-list button{
+        flex:1;
+        font-size:12px;
+        padding:8px;
+    }
+}
 </style>
 
 <!-- Librerie -->
@@ -118,7 +181,6 @@ h2 { text-align:center; color:#1a73e8; margin-bottom:15px;}
 <script src="firebase.js"></script>
 
 <script>
-/* ===== MOSTRA STORICO ===== */
 function mostraStorico(){
     const list = document.getElementById("storico-list");
     list.innerHTML = '<div id="loading-msg">Caricamento storico...</div>';
@@ -127,6 +189,7 @@ function mostraStorico(){
     db.ref("archivio").once("value").then(snap=>{
         const archivi = snap.val()||{};
         let html = "";
+
         Object.keys(archivi).sort().reverse().forEach(d=>{
             if(filtro && !d.toLowerCase().includes(filtro)) return;
 
@@ -137,11 +200,11 @@ function mostraStorico(){
                 <button onclick="esportaArchivioPDF('${d}')">⬇ PDF</button>
             </div>`;
         });
+
         list.innerHTML = html || '<div id="loading-msg">Nessun storico disponibile</div>';
     });
 }
 
-/* ===== VISUALIZZA / NASCONDI DETTAGLIO ===== */
 function visualizzaArchivio(data){
     const row = document.getElementById(`row-${data}`);
     let detailDiv = document.getElementById(`detail-${data}`);
@@ -194,23 +257,25 @@ function visualizzaArchivio(data){
                     html+="<div class='hands-history'><table><tr><th>Mano</th>";
                     arr.forEach(p=>html+=`<th>${p.name}</th>`);
                     html+="</tr>";
+
                     for(let i=0;i<maxHands;i++){
                         html+=`<tr><td>${i+1}</td>`;
                         arr.forEach(p=>html+=`<td>${p.playerHistory?.[i]??"-"}</td>`);
                         html+="</tr>";
                     }
+
                     html+="</table></div>";
                 }
             }
 
             html+="</div>";
         });
+
         html+="</div>";
         detailDiv.innerHTML = html;
     });
 }
 
-/* ===== EXPORT EXCEL ===== */
 function esportaArchivio(data){
     db.ref("archivio/"+data).once("value").then(snap=>{
         const tables = snap.val()?.tables || {};
@@ -249,7 +314,6 @@ function esportaArchivio(data){
     });
 }
 
-/* ===== EXPORT PDF ===== */
 function esportaArchivioPDF(data){
     db.ref("archivio/"+data).once("value").then(snap=>{
         const tables = snap.val()?.tables || {};
@@ -259,6 +323,7 @@ function esportaArchivioPDF(data){
         Object.values(tables).forEach(t=>{
             let arr = Object.values(t.players || []);
             html+=`<div class="table"><b>${t.name}</b>`;
+
             if(arr.length===0){
                 html+='<p>Nessun giocatore</p>';
             } else {
@@ -270,21 +335,26 @@ function esportaArchivioPDF(data){
                         <span class="player-score">${p.score}</span>
                     </div>`;
                 });
+
                 const maxHands = Math.max(...arr.map(p=>(p.playerHistory||[]).length));
                 if(maxHands>0){
                     html+="<div class='hands-history'><table><tr><th>Mano</th>";
                     arr.forEach(p=>html+=`<th>${p.name}</th>`);
                     html+="</tr>";
+
                     for(let i=0;i<maxHands;i++){
                         html+=`<tr><td>${i+1}</td>`;
                         arr.forEach(p=>html+=`<td>${p.playerHistory?.[i]??"-"}</td>`);
                         html+="</tr>";
                     }
+
                     html+="</table></div>";
                 }
             }
+
             html+="</div>";
         });
+
         html+="</div>";
 
         const tempDiv = document.createElement('div');
@@ -297,10 +367,13 @@ function esportaArchivioPDF(data){
             const imgData = canvas.toDataURL('image/png');
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF('p','pt','a4');
+
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = pdf.internal.pageSize.getHeight();
+
             const imgWidth = pdfWidth;
             const imgHeight = canvas.height * pdfWidth / canvas.width;
+
             let heightLeft = imgHeight;
             let position = 0;
 
@@ -325,21 +398,26 @@ function goToTables(){
 }
 
 document.addEventListener("DOMContentLoaded", ()=>mostraStorico());
-
 </script>
 </head>
 
 <body>
+
 <div class="card">
+
 <h2>Storico Partite</h2>
 
 <div style="text-align:center; margin-bottom:10px;">
-    <button onclick="goToTables()" style="background:#1a73e8;color:white;padding:10px 15px;border:none;border-radius:6px;cursor:pointer;">
+    <button onclick="goToTables()" style="background:#1a73e8;color:white;padding:10px 15px;border:none;border-radius:6px;cursor:pointer;width:100%;">
         ⬅️ Torna ai Tavoli
     </button>
 </div>
 
 <input type="text" id="searchData" placeholder="🔍 Filtra data..." oninput="mostraStorico()">
+
 <div id="storico-list"></div>
-</div></body>
+
+</div>
+
+</body>
 </html>
