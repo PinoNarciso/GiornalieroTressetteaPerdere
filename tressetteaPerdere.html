@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tressette a Perdere - Pino Narciso</title>
+
+<style>
+:root{
+--primary:#2c3e50;
+--danger:#e74c3c;
+--warning:#f39c12;
+--success:#27ae60;
+--accent:#3498db;
+--info:#34b7f1;
+.btn-back{
+background:var(--primary);
+}
+}
+
+body{
+font-family:Segoe UI;
+background:#f0f2f5;
+margin:0;
+padding:10px;
+display:flex;
+flex-direction:column;
+align-items:center;
+}
+
+.card{
+background:white;
+padding:15px;
+border-radius:12px;
+box-shadow:0 4px 10px rgba(0,0,0,0.1);
+width:100%;
+max-width:520px;
+margin-bottom:15px;
+}
+
+h1{
+text-align:center;
+font-size:1.3rem;
+color:var(--primary);
+}
+
+button{
+width:100%;
+padding:10px;
+border:none;
+border-radius:8px;
+color:white;
+font-weight:bold;
+margin-bottom:6px;
+cursor:pointer;
+}
+
+.btn-cap{background:var(--warning);width:auto;padding:4px 8px;font-size:0.7rem;}
+.btn-rete{background:var(--info);width:auto;padding:4px 8px;font-size:0.7rem;}
+.btn-undo{background:#95a5a6;}
+.btn-share{background:var(--accent);}
+#confirm-btn{background:var(--danger);}
+#confirm-btn.ready{background:var(--success);}
+
+.player-row{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:6px 0;
+border-bottom:1px solid #eee;
+}
+
+.leader{
+background:#fff3cd;
+border-left:4px solid #f39c12;
+}
+
+.sum-check{
+text-align:center;
+font-weight:bold;
+padding:6px;
+border-radius:6px;
+margin:10px 0;
+}
+
+.sum-ok{background:#e8f5e9;color:green;}
+.sum-err{background:#ffebee;color:red;}
+
+  table{
+    width:100%;
+    border-collapse:collapse;
+    table-layout:fixed; /* le colonne rispettano le larghezze impostate */
+}
+
+th, td{
+    padding:6px;
+    font-size:0.8rem;
+    border-bottom:1px solid #eee;
+}
+
+/* Colonne specifiche */
+th:nth-child(1), td:nth-child(1){ 
+    width:30px;       /* Colonna N */
+    text-align:center;
+}
+
+th:nth-child(2), td:nth-child(2){ 
+    width:80px;      /* Colonna Nome */
+    text-align:left;
+    word-wrap:break-word;  /* va a capo se troppo lungo */
+    white-space:normal;    /* rimuove il no-wrap */
+}
+
+th:nth-child(3), td:nth-child(3){ 
+    width:30px;       /* Colonna Punti */
+    text-align:center;
+}
+
+th:nth-child(4), td:nth-child(4){ 
+    width:auto;       /* Colonna Storico prende il resto dello spazio */
+    text-align:left;
+}
+
+/* Mantieni scroll orizzontale per le mani nella colonna storico */
+.history-scroll-cell{
+    display:flex;
+    gap:8px;
+    overflow-x:auto;
+    padding:4px 0;
+}
+
+.badge-container{
+display:flex;
+flex-direction:column;
+align-items:center;
+min-width:24px;
+}
+
+.hand-num{
+display:flex;
+align-items:center;
+justify-content:center;
+width:20px;
+height:20px;
+border-radius:50%;
+background:#ddd;
+font-size:0.7rem;
+font-weight:bold;
+margin-bottom:2px;
+}
+
+.badge{
+padding:4px 6px;
+border-radius:6px;
+font-size:0.75rem;
+}
+
+.temp-winner{background:#e8f9ee;border-left:4px solid #27ae60;}
+.eliminated{background:#fdf2f2;color:#aaa;text-decoration:line-through;}
+.hidden{display:none}
+
+footer{
+font-size:0.7rem;
+text-align:center;
+color:#777;
+margin:20px 0;
+}
+</style>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="firebase.js"></script>
+</head>
+<body>
+
+<div class="card hidden" id="game">
+<h1 id="displayTableName"></h1>
+
+<div id="inputs-area"></div>
+
+<div id="sum-display" class="sum-check sum-err">Somma: 0 / 21</div>
+
+<button id="confirm-btn" onclick="addRound()" disabled>Conferma Mano</button>
+
+<h3>Classifica e storico</h3>
+<table>
+<thead>
+<tr>
+<th>N</th><th>Nome</th><th>Punti</th><th>Storico</th>
+</tr>
+</thead>
+<tbody id="ranking-body"></tbody>
+</table>
+
+<div style="margin-top:15px">
+<button class="btn-share" onclick="shareResults()">📤 Condividi risultati</button>
+<button class="btn-undo" onclick="undoLast()">↩️ Annulla ultima mano</button>
+<button class="btn-back" onclick="goToTables()">⬅️ Torna ai Tavoli</button>
+</div>
+</div>
+
+<footer>© 2026 - Pino Narciso</footer>
+
+<script>
+let players=[], history=[], limit=81, tableName="", winners=1, dealerIndex=-1;
+
+window.onload = function(){ start(); }
+
+function start(){
+    const tableId = localStorage.getItem("tableID");
+    tableName = localStorage.getItem("tableName");
+
+    if(!tableId || !tableName){
+        alert("ID o nome tavolo non trovato.");
+        window.location.href = "index.html";
+        return;
+    }
+
+    document.getElementById("displayTableName").innerText = tableName;
+    document.getElementById("game").classList.remove("hidden");
+
+    db.ref("tables/" + tableId).on("value", snapshot=>{
+        if(snapshot.exists()){
+            const data = snapshot.val();
+            loadDataFromFirebase(data);
+        }
+    });
+}
+
+function loadDataFromFirebase(data){
+    players = [];
+    if(data.players){
+        if(Array.isArray(data.players)){
+            players = data.players.map((p,i)=>({
+                id:i,
+                name:p.name || p,
+                score:p.score || 0,
+                active:p.active !== undefined ? p.active : true,
+                playerHistory:p.playerHistory || []
+            }));
+        } else {
+            players = Object.keys(data.players).map((key,i)=>{
+                const p = data.players[key];
+                return {
+                    id:i,
+                    name:p.name || p,
+                    score:p.score || 0,
+                    active:p.active !== undefined ? p.active : true,
+                    playerHistory:p.playerHistory || []
+                };
+            });
+        }
+    }
+    history = data.history || [];
+    limit = data.limit || 81;
+    winners = data.winners || 1;
+    dealerIndex = data.dealerIndex ?? -1;
+
+    render();
+}
+
+function render(){
+    const area = document.getElementById("inputs-area");
+    area.innerHTML="";
+    players.filter(p=>p.active).forEach(p=>{
+        const isDealer=(dealerIndex!=-1 && players[dealerIndex].id===p.id)?"leader":"";
+        area.innerHTML+=`
+        <div class="player-row ${isDealer}">
+            <span>${p.name} ${isDealer?"★":""}</span>
+            <div style="display:flex;gap:4px">
+                <input type="number" class="score-in" data-id="${p.id}" min="0" max="21" style="width:50px" oninput="checkSum()" ${isGameOver()? "disabled": ""}>
+                <button class="btn-rete" onclick="fillRete(${p.id})" ${isGameOver()? "disabled": ""}>RETE</button>
+                <button class="btn-cap" onclick="makeCappotto(${p.id})" ${isGameOver()? "disabled": ""}>CAP</button>
+            </div>
+        </div>`;
+    });
+    renderRanking();
+    checkSum();
+    document.getElementById("confirm-btn").disabled = isGameOver();
+}
+
+function isGameOver(){
+    return players.filter(p=>p.active).length <= winners;
+}
+
+function addRound(){
+    if(dealerIndex===-1) chooseFirstDealer();
+
+    const snapshot={};
+    document.querySelectorAll(".score-in").forEach(inp=>{
+        const id=parseInt(inp.dataset.id);
+        const val=parseInt(inp.value||0);
+        const p=players.find(pl=>pl.id===id);
+        snapshot[id]={prevScore:p.score,prevActive:p.active};
+        p.score+=val;
+        p.playerHistory.push(val);
+    });
+
+    checkEliminations();
+    history.push({snapshot,dealerIndex});
+    document.querySelectorAll(".score-in").forEach(i=>i.value="");
+
+    updateDealerAfterRound();
+    saveGameToFirebase();
+    render();
+}
+
+function checkSum(){
+    let sum=0;
+    document.querySelectorAll(".score-in").forEach(i=>sum+=parseInt(i.value||0));
+    const display=document.getElementById("sum-display");
+    const btn=document.getElementById("confirm-btn");
+    display.innerText=`Somma: ${sum} / 21`;
+    if(sum==21 && !isGameOver()){ btn.disabled=false; btn.classList.add("ready"); display.className="sum-check sum-ok";}
+    else{ btn.disabled=true; btn.classList.remove("ready"); display.className="sum-check sum-err";}
+}
+
+function fillRete(targetId){
+    if(isGameOver()) return;
+    let total=0,target=null;
+    document.querySelectorAll(".score-in").forEach(inp=>{
+        const val=parseInt(inp.value);
+        if(parseInt(inp.dataset.id)===targetId) target=inp;
+        else total+=isNaN(val)?0:val;
+    });
+    if(target){ target.value=Math.min(Math.max(21-total,0),21); }
+    checkSum();
+}
+
+function makeCappotto(winnerId){
+    if(isGameOver()) return;
+
+    // Se alla prima mano non c'è ancora un mazziere, chiedi chi è
+    if(dealerIndex === -1){
+        chooseFirstDealer(); // questo imposta dealerIndex
+    }
+
+    if(!confirm("Confermi Cappotto?")) return;
+
+    const snapshot = {};
+    players.forEach(p => {
+        if(p.active){
+            snapshot[p.id] = {prevScore: p.score, prevActive: p.active};
+            const pts = (p.id === winnerId) ? 0 : 21;
+            p.score += pts;
+            p.playerHistory.push(pts);
+        }
+    });
+
+    checkEliminations();
+    history.push({snapshot, dealerIndex});
+    updateDealerAfterRound();
+    saveGameToFirebase();
+    render();
+}
+function checkEliminations(){
+    players.forEach(p=>{ if(p.score>=limit) p.active=false; });
+    if(isGameOver()){ alert("🏁 Partita terminata!"); }
+}
+
+function undoLast(){
+    if(!history.length) return;
+
+    // Messaggio di conferma
+    if(!confirm("Sei sicuro di voler annullare l'ultima mano?")) return;
+
+    const last = history.pop();
+    for(let id in last.snapshot){
+        const p = players.find(pl => pl.id === parseInt(id));
+        p.score = last.snapshot[id].prevScore;
+        p.active = last.snapshot[id].prevActive;
+        p.playerHistory.pop();
+    }
+    dealerIndex = last.dealerIndex;
+    saveGameToFirebase();
+    render();
+}
+
+function renderRanking(){
+    const rank=document.getElementById("ranking-body");
+    rank.innerHTML="";
+    const sorted=[...players].sort((a,b)=>a.score-b.score);
+    sorted.forEach((p,i)=>{
+        let cls="";
+        if(i<winners && p.active) cls="temp-winner";
+        if(!p.active) cls="eliminated";
+        const reversed=[...p.playerHistory].reverse();
+        const badges=reversed.map((pt,idx)=>{
+            const handNumber=p.playerHistory.length-idx;
+            return `<div class="badge-container"><span class="hand-num">${handNumber}</span><span class="badge">${pt}</span></div>`;
+        }).join("");
+        rank.innerHTML+=`<tr class="${cls}"><td>${i+1}</td><td>${p.name}</td><td><b>${p.score}</b></td><td><div class="history-scroll-cell">${badges||"-"}</div></td></tr>`;
+    });
+}
+
+function shareResults() {
+    try {
+        let text = `🏆 TRESSETTE A PERDERE - ${tableName}\n\n`;
+
+        // Ordina i giocatori dal punteggio più basso al più alto
+        const sorted = [...players].sort((a, b) => a.score - b.score);
+
+        // Trova lunghezza massima dei nomi e dei punteggi per allineamento
+        const maxNameLength = Math.max(...sorted.map(p => p.name.length));
+        const maxScoreLength = Math.max(...sorted.map(p => p.score.toString().length));
+
+        sorted.forEach((p, i) => {
+            const position = `${i + 1}.`;
+
+            // Puntini dinamici per allineare punteggio
+            const dotsCount = maxNameLength - p.name.length + 3; // +3 per spazio extra
+            const dots = ".".repeat(dotsCount);
+
+            // Riga principale: posizione, nome, puntini e punteggio allineato
+            const scoreStr = p.score.toString().padStart(maxScoreLength, " ");
+            text += `${position} ${p.name} ${dots} ${scoreStr}\n`;
+
+            // Storico mani con etichette numeriche
+            if (p.playerHistory?.length) {
+                const labeledHistory = p.playerHistory
+                    .map((score, index) => `${index + 1}ª: ${score}`)
+                    .join(", ");
+                text += `   Storico mani: ${labeledHistory}\n`;
+            } else {
+                text += `   Storico mani: -\n`;
+            }
+
+            text += `─────────────────────────────\n`;
+        });
+
+        // Condivisione tramite navigator o copia negli appunti
+        if (navigator.share) {
+            navigator.share({ title: "Risultati Tressette", text });
+        } else {
+            navigator.clipboard.writeText(text);
+            alert("Risultati copiati negli appunti!");
+        }
+
+    } catch (err) {
+        console.error("Errore condivisione risultati:", err);
+        alert("Si è verificato un errore nella condivisione dei risultati.");
+    }
+}
+
+
+function saveGameToFirebase(){
+    const tableId=localStorage.getItem("tableID");
+    if(!tableId) return;
+    const gameData={
+        name:tableName,
+        players:players.map(p=>({id:p.id,name:p.name,score:p.score,active:p.active,playerHistory:[...p.playerHistory]})),
+        history:history.map(h=>({snapshot:h.snapshot,dealerIndex:h.dealerIndex})),
+        limit,winners,dealerIndex
+    };
+    db.ref("tables/"+tableId).update(gameData)
+      .then(()=>console.log("Dati salvati su Firebase"))
+      .catch(err=>console.error("Errore salvataggio Firebase:",err));
+}
+
+function chooseFirstDealer(){
+    let activePlayers = players.filter(p=>p.active);
+    let names = activePlayers.map((p,i)=>`${i+1} - ${p.name}`).join("\n");
+    let choice = prompt("Chi è stato il mazziere della prima mano?\n\n"+names);
+    let index=parseInt(choice)-1;
+    dealerIndex=(index>=0 && index<activePlayers.length)?players.findIndex(p=>p.id===activePlayers[index].id):players.findIndex(p=>p.active);
+}
+
+function updateDealerAfterRound(){
+    if(dealerIndex===-1) return;
+    let next=dealerIndex;
+    do{ next=(next+1)%players.length } while(!players[next].active);
+    dealerIndex=next;
+}
+
+function goToTables(){
+    window.location.href = "index.html";
+}
+</script>
+
+</body>
+</html>
