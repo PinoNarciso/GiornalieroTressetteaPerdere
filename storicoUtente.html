@@ -57,27 +57,27 @@ h2 {
     display:flex;
     align-items:center;
     width:100%;
-    min-width:0; /* importante per non far sforare */
+    min-width:0; /* per evitare overflow */
 }
 
 .player-name {
     white-space:nowrap;   /* rimane sulla stessa riga */
     overflow:hidden;
     text-overflow:ellipsis;
-    flex-shrink:0;         /* non si restringe troppo */
+    flex: 0 0 60%;         /* larghezza aumentata al 60% della riga */
     margin-right:8px;
     font-size:14px;
 }
 
 .dots {
-    flex-grow:1;           /* occupa tutto lo spazio rimanente */
+    flex-grow:1;           /* occupa lo spazio rimanente tra nome e punteggio */
     border-bottom:2px dotted #bbb;
     height:0;
     margin:0 8px;
 }
 
 .player-score {
-    flex-shrink:0;         /* rimane visibile e non si restringe */
+    flex-shrink:0;
     min-width:35px;
     text-align:left;
     font-weight:bold;
