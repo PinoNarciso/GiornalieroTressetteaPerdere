@@ -58,14 +58,11 @@ h2 {
     margin:3px 0;
 }
 
-.player-name {
-    max-width:60%;
-}
-
 .dots {
     flex:1;
     border-bottom:2px dotted #bbb;
     margin:0 6px;
+    min-width:5px;
 }
 
 .player-score {
@@ -75,21 +72,23 @@ h2 {
 
 .hands-history {
     margin-top:5px;
-    overflow-x:auto; /* scroll orizzontale */
+    overflow-x:auto; /* scroll orizzontale solo se necessario */
 }
 
 .hands-history table {
-    width: max-content;
-    min-width: 100%;
+    width: 100%; /* si adatta alla larghezza del contenitore */
     border-collapse:collapse;
     font-size:12px;
 }
 
 .hands-history th, .hands-history td {
-    border:1px solid #ccc;
-    padding:3px;
-    text-align:center;
-    white-space:nowrap; /* nomi lunghi su una riga */
+    border: 1px solid #ccc;
+    padding: 3px;
+    text-align: center;
+    white-space: nowrap;       /* evita il wrapping */
+    max-width: 150px;          /* limite larghezza colonna su mobile */
+    overflow: hidden;
+    text-overflow: ellipsis;   /* aggiunge "…" se il testo è troppo lungo */
 }
 
 .eliminated {
@@ -109,7 +108,7 @@ h2 {
 }
 
 #storico-dettaglio {
-    min-width:600px;
+    width:100%;
 }
 </style>
 
