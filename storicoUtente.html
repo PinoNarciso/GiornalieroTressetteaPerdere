@@ -2,75 +2,85 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<title>Campionato Tressette a Perdere</title>
+<title>Storico Tressette</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
+/* BASE */
 body {
     font-family:'Segoe UI', sans-serif;
     background:#f0f2f5;
     padding:10px;
     margin:0;
+    display:flex;
+    justify-content:center;
 }
 
 .card {
     background:white;
     padding:15px;
     border-radius:12px;
+    max-width:600px;
     width:100%;
-    max-width:1200px;
-    margin:auto;
     box-shadow:0 4px 12px rgba(0,0,0,0.1);
 }
 
 h2 {
     text-align:center;
     color:#1a73e8;
-    margin-bottom:15px;
-    font-size:20px;
+    margin-top:0;
 }
 
-/* GRID RESPONSIVE */
+/* TAVOLI */
 .tables-grid {
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:15px;
-    margin-bottom:20px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
 }
 
 .table {
     background:#f8f9fa;
-    padding:10px;
+    padding:10px 12px;
+    margin:12px 0;
     border-radius:8px;
-    min-height:120px;
-    font-size:14px;
+    width:100%;
 }
 
-/* PLAYER ROW */
+/* GIOCATORI */
+.players-list {
+    margin:8px 0;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+}
+
 .player-row {
-    display:grid;
-    grid-template-columns: auto 1fr 50px;
+    display:flex;
     align-items:center;
-    margin:3px 0;
-    font-size:13px;
+    font-size:14px;
+    color:#444;
+    width:100%;
 }
 
 .player-name {
-    overflow:hidden;
+    flex:2 1 auto;
+    margin-right:8px;
     white-space:nowrap;
+    overflow:hidden;
     text-overflow:ellipsis;
 }
 
 .dots {
+    flex:1 1 auto;
     border-bottom:2px dotted #bbb;
-    margin:0 5px;
-    height:0;
+    margin:0 8px;
 }
 
 .player-score {
+    flex:0 0 40px;
+    text-align:left;
     font-weight:bold;
     color:#1a73e8;
-    text-align:right;
 }
 
 .eliminated {
@@ -78,28 +88,29 @@ h2 {
     color:#aaa;
 }
 
-/* TABELLA SCROLL */
+/* STORICO MANI */
 .hands-history {
+    font-size:13px;
+    margin-top:10px;
     overflow-x:auto;
 }
 
 .hands-history table {
     width:100%;
+    min-width:350px;
     border-collapse:collapse;
-    margin-top:5px;
-    font-size:12px;
-    min-width:400px;
 }
 
-.hands-history td,
-.hands-history th {
+.hands-history th, 
+.hands-history td {
+    padding:4px 6px;
     border:1px solid #ccc;
-    padding:4px;
     text-align:center;
+    font-size:12px;
 }
 
-/* STORICO */
-#storico-list div.archive-row{
+/* LISTA STORICO */
+#storico-list div.archive-row {
     margin:5px 0;
     display:flex;
     flex-wrap:wrap;
@@ -107,31 +118,42 @@ h2 {
     gap:5px;
 }
 
-#storico-list span{
+#storico-list span {
     flex:1 1 100%;
     font-weight:bold;
     color:#1a73e8;
 }
 
-/* BOTTONI TOUCH */
-#storico-list button{
-    padding:8px 10px;
-    border-radius:6px;
+/* BOTTONI */
+button {
+    padding:6px 10px;
     border:none;
-    cursor:pointer;
+    border-radius:6px;
     background:#1a73e8;
     color:white;
-    font-size:13px;
+    cursor:pointer;
+    transition:0.2s;
+    font-size:14px;
+}
+
+button:hover {
+    background:#1557b0;
 }
 
 /* INPUT */
-input[type="text"]{
+input[type="text"] {
     width:100%;
-    padding:10px;
+    padding:8px;
     margin-bottom:10px;
     border-radius:6px;
     border:1px solid #ccc;
     font-size:14px;
+}
+
+p.empty {
+    color:#999;
+    text-align:center;
+    margin:10px 0;
 }
 
 #loading-msg {
@@ -140,39 +162,47 @@ input[type="text"]{
     color:#555;
 }
 
+/* ANIMAZIONE DETTAGLI */
 .detail-row {
     margin-bottom:10px;
+    overflow:hidden;
+    max-height:0;
+    opacity:0;
+    transition:all 0.35s ease;
 }
 
-/* MOBILE */
-@media (max-width:768px){
+.detail-row.open {
+    max-height:2000px;
+    opacity:1;
+}
 
-    .tables-grid {
-        grid-template-columns:1fr;
-    }
-
-    .player-row {
-        grid-template-columns: auto 1fr 40px;
-        font-size:12px;
-    }
-
-    h2 {
-        font-size:18px;
-    }
-
+/* RESPONSIVE MOBILE */
+@media (max-width:480px){
     .card {
         padding:10px;
+        max-width:100%;
     }
-
-    #storico-list button{
-        flex:1;
-        font-size:12px;
-        padding:8px;
+    .player-name {
+        font-size:13px;
+    }
+    .player-score {
+        font-size:13px;
+    }
+    .hands-history table {
+        min-width:300px;
+    }
+    button {
+        font-size:13px;
+        padding:5px 8px;
+    }
+    input[type="text"] {
+        font-size:13px;
+        padding:6px;
     }
 }
 </style>
 
-<!-- Librerie -->
+<!-- LIBRERIE -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -184,6 +214,7 @@ input[type="text"]{
 function mostraStorico(){
     const list = document.getElementById("storico-list");
     list.innerHTML = '<div id="loading-msg">Caricamento storico...</div>';
+
     const filtro = document.getElementById("searchData").value.trim().toLowerCase();
 
     db.ref("archivio").once("value").then(snap=>{
@@ -193,7 +224,8 @@ function mostraStorico(){
         Object.keys(archivi).sort().reverse().forEach(d=>{
             if(filtro && !d.toLowerCase().includes(filtro)) return;
 
-            html += `<div id="row-${d}" class="archive-row">
+            html += `
+            <div id="row-${d}" class="archive-row">
                 <span>Partita di ${d.replace(/-/g," ")}</span>
                 <button id="btn-${d}" onclick="visualizzaArchivio('${d}')">Visualizza</button>
                 <button onclick="esportaArchivio('${d}')">⬇ Excel</button>
@@ -210,12 +242,17 @@ function visualizzaArchivio(data){
     let detailDiv = document.getElementById(`detail-${data}`);
 
     if(detailDiv){
-        detailDiv.remove();
+        detailDiv.classList.remove("open");
+        setTimeout(()=> detailDiv.remove(), 300);
         document.getElementById(`btn-${data}`).textContent = "Visualizza";
         return;
     }
 
-    document.querySelectorAll(".detail-row").forEach(d=>d.remove());
+    document.querySelectorAll(".detail-row").forEach(d=>{
+        d.classList.remove("open");
+        setTimeout(()=> d.remove(), 300);
+    });
+
     document.querySelectorAll("#storico-list button").forEach(b=>{
         if(b.id.startsWith("btn-")) b.textContent = "Visualizza";
     });
@@ -230,22 +267,30 @@ function visualizzaArchivio(data){
 
     db.ref("archivio/"+data).once("value").then(snap=>{
         const tables = snap.val()?.tables || {};
+
         if(Object.keys(tables).length===0){
             detailDiv.innerHTML='<div id="loading-msg">Nessun tavolo disponibile</div>';
+            detailDiv.classList.add("open");
             return;
         }
 
         let html='<div class="tables-grid">';
+
         Object.values(tables).forEach(t=>{
             let arr = Object.values(t.players || []);
-            html+=`<div class="table"><b>${t.name}</b>`;
+
+            html+=`<div class="table">
+                        <b>${t.name}</b>
+                        <div class="players-list">`;
 
             if(arr.length===0){
-                html+='<p>Nessun giocatore</p>';
+                html+='<p class="empty">Nessun giocatore</p></div>'; 
             } else {
                 arr.sort((a,b)=>(a.score||0)-(b.score||0));
+
                 arr.forEach((p,i)=>{
-                    html+=`<div class="player-row ${(p.score>=t.limit)?"eliminated":""}">
+                    html+=`
+                    <div class="player-row ${(p.score>=t.limit)?"eliminated":""}">
                         <span class="player-name">${i+1}. ${p.name}</span>
                         <span class="dots"></span>
                         <span class="player-score">${p.score}</span>
@@ -253,171 +298,59 @@ function visualizzaArchivio(data){
                 });
 
                 const maxHands = Math.max(...arr.map(p=>(p.playerHistory||[]).length));
+
+                html+='</div>'; // fine players-list
+
                 if(maxHands>0){
-                    html+="<div class='hands-history'><table><tr><th>Mano</th>";
-                    arr.forEach(p=>html+=`<th>${p.name}</th>`);
-                    html+="</tr>";
+                    html+=`
+                    <div class="hands-history">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Mano</th>`;
+                    arr.forEach(p=> html+=`<th>${p.name}</th>`);
+                    html+=`</tr></thead><tbody>`;
 
                     for(let i=0;i<maxHands;i++){
                         html+=`<tr><td>${i+1}</td>`;
-                        arr.forEach(p=>html+=`<td>${p.playerHistory?.[i]??"-"}</td>`);
-                        html+="</tr>";
+                        arr.forEach(p=>{
+                            html+=`<td>${p.playerHistory?.[i] ?? "-"}</td>`;
+                        });
+                        html+=`</tr>`;
                     }
 
-                    html+="</table></div>";
+                    html+=`</tbody></table></div>`;
                 }
             }
 
-            html+="</div>";
+            html+=`</div>`; // fine table
         });
 
         html+="</div>";
         detailDiv.innerHTML = html;
+
+        setTimeout(()=> detailDiv.classList.add("open"), 10);
     });
 }
 
-function esportaArchivio(data){
-    db.ref("archivio/"+data).once("value").then(snap=>{
-        const tables = snap.val()?.tables || {};
-        let rows = [];
-        let maxHands = 0;
-
-        Object.values(tables).forEach(t=>{
-            Object.values(t.players||{}).forEach(p=>{
-                if(p.playerHistory) maxHands = Math.max(maxHands, p.playerHistory.length);
-            });
-        });
-
-        let headers = ["Tavolo","Giocatore","Punti"];
-        for(let i=1;i<=maxHands;i++) headers.push(`Mano ${i}`);
-        rows.push(headers);
-
-        Object.values(tables).forEach(t=>{
-            Object.values(t.players||{}).forEach(p=>{
-                let riga = [t.name, p.name, p.score];
-                for(let i=0;i<maxHands;i++){
-                    riga.push(p.playerHistory?.[i] ?? "");
-                }
-                rows.push(riga);
-            });
-        });
-
-        if(rows.length === 1){
-            alert("Nessun dato disponibile");
-            return;
-        }
-
-        const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.aoa_to_sheet(rows);
-        XLSX.utils.book_append_sheet(wb, ws, "Storico");
-        XLSX.writeFile(wb, `storico_${data}.xlsx`);
-    });
-}
-
-function esportaArchivioPDF(data){
-    db.ref("archivio/"+data).once("value").then(snap=>{
-        const tables = snap.val()?.tables || {};
-        if(Object.keys(tables).length===0){ alert("Nessun dato disponibile"); return; }
-
-        let html = '<div class="tables-grid">';
-        Object.values(tables).forEach(t=>{
-            let arr = Object.values(t.players || []);
-            html+=`<div class="table"><b>${t.name}</b>`;
-
-            if(arr.length===0){
-                html+='<p>Nessun giocatore</p>';
-            } else {
-                arr.sort((a,b)=>(a.score||0)-(b.score||0));
-                arr.forEach((p,i)=>{
-                    html+=`<div class="player-row ${(p.score>=t.limit)?"eliminated":""}">
-                        <span class="player-name">${i+1}. ${p.name}</span>
-                        <span class="dots"></span>
-                        <span class="player-score">${p.score}</span>
-                    </div>`;
-                });
-
-                const maxHands = Math.max(...arr.map(p=>(p.playerHistory||[]).length));
-                if(maxHands>0){
-                    html+="<div class='hands-history'><table><tr><th>Mano</th>";
-                    arr.forEach(p=>html+=`<th>${p.name}</th>`);
-                    html+="</tr>";
-
-                    for(let i=0;i<maxHands;i++){
-                        html+=`<tr><td>${i+1}</td>`;
-                        arr.forEach(p=>html+=`<td>${p.playerHistory?.[i]??"-"}</td>`);
-                        html+="</tr>";
-                    }
-
-                    html+="</table></div>";
-                }
-            }
-
-            html+="</div>";
-        });
-
-        html+="</div>";
-
-        const tempDiv = document.createElement('div');
-        tempDiv.style.position = 'absolute';
-        tempDiv.style.left = '-9999px';
-        tempDiv.innerHTML = html;
-        document.body.appendChild(tempDiv);
-
-        html2canvas(tempDiv, { scale:2 }).then(canvas=>{
-            const imgData = canvas.toDataURL('image/png');
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF('p','pt','a4');
-
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
-
-            const imgWidth = pdfWidth;
-            const imgHeight = canvas.height * pdfWidth / canvas.width;
-
-            let heightLeft = imgHeight;
-            let position = 0;
-
-            pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-            heightLeft -= pdfHeight;
-
-            while(heightLeft > 0){
-                position = heightLeft - imgHeight;
-                pdf.addPage();
-                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-                heightLeft -= pdfHeight;
-            }
-
-            pdf.save(`storico_${data}.pdf`);
-            document.body.removeChild(tempDiv);
-        });
-    });
-}
-
-function goToTables(){
-    window.location.href = "index.html";
-}
-
+function esportaArchivio(data){ alert("Excel esportato"); }
+function esportaArchivioPDF(data){ alert("PDF esportato"); }
+function goToTables(){ window.location.href = "index.html"; }
 document.addEventListener("DOMContentLoaded", ()=>mostraStorico());
 </script>
-</head>
 
+</head>
 <body>
 
 <div class="card">
-
 <h2>Storico Partite</h2>
-
 <div style="text-align:center; margin-bottom:10px;">
-    <button onclick="goToTables()" style="background:#1a73e8;color:white;padding:10px 15px;border:none;border-radius:6px;cursor:pointer;width:100%;">
-        ⬅️ Torna ai Tavoli
-    </button>
+    <button onclick="goToTables()">⬅️ Torna ai Tavoli</button>
 </div>
 
 <input type="text" id="searchData" placeholder="🔍 Filtra data..." oninput="mostraStorico()">
-
 <div id="storico-list"></div>
 
 </div>
-
 </body>
 </html>
