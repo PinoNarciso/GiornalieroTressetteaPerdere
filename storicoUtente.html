@@ -6,7 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-/* BASE */
 body {
     font-family:'Segoe UI', sans-serif;
     background:#f0f2f5;
@@ -57,26 +56,28 @@ h2 {
 .player-row {
     display:flex;
     align-items:center;
-    font-size:14px;
-    color:#444;
     width:100%;
-    gap:8px;
+    min-width:0; /* importante per non far sforare */
 }
 
 .player-name {
-    flex:0 1 auto;           /* larghezza minima necessaria, cresce se serve */
-    white-space: normal;     /* permette più righe */
-    word-wrap: break-word;
+    white-space:nowrap;   /* rimane sulla stessa riga */
+    overflow:hidden;
+    text-overflow:ellipsis;
+    flex-shrink:0;         /* non si restringe troppo */
+    margin-right:8px;
+    font-size:14px;
 }
 
 .dots {
-    flex:1 1 auto;           /* si allunga per occupare tutto lo spazio disponibile */
+    flex-grow:1;           /* occupa tutto lo spazio rimanente */
     border-bottom:2px dotted #bbb;
     height:0;
+    margin:0 8px;
 }
 
 .player-score {
-    flex:0 0 auto;           /* mantiene dimensione necessaria per il punteggio */
+    flex-shrink:0;         /* rimane visibile e non si restringe */
     min-width:35px;
     text-align:left;
     font-weight:bold;
@@ -182,10 +183,7 @@ p.empty {
         padding:10px;
         max-width:100%;
     }
-    .player-name {
-        font-size:13px;
-    }
-    .player-score {
+    .player-name, .player-score {
         font-size:13px;
     }
     .hands-history table {
@@ -211,11 +209,9 @@ p.empty {
 <script src="firebase.js"></script>
 
 <script>
-// stesso JS di prima
 function mostraStorico(){
     const list = document.getElementById("storico-list");
     list.innerHTML = '<div id="loading-msg">Caricamento storico...</div>';
-
     const filtro = document.getElementById("searchData").value.trim().toLowerCase();
 
     db.ref("archivio").once("value").then(snap=>{
@@ -224,7 +220,6 @@ function mostraStorico(){
 
         Object.keys(archivi).sort().reverse().forEach(d=>{
             if(filtro && !d.toLowerCase().includes(filtro)) return;
-
             html += `
             <div id="row-${d}" class="archive-row">
                 <span>Partita di ${d.replace(/-/g," ")}</span>
@@ -276,7 +271,6 @@ function visualizzaArchivio(data){
         }
 
         let html='<div class="tables-grid">';
-
         Object.values(tables).forEach(t=>{
             let arr = Object.values(t.players || []);
 
@@ -299,7 +293,6 @@ function visualizzaArchivio(data){
                 });
 
                 const maxHands = Math.max(...arr.map(p=>(p.playerHistory||[]).length));
-
                 html+='</div>'; // fine players-list
 
                 if(maxHands>0){
@@ -329,7 +322,6 @@ function visualizzaArchivio(data){
 
         html+="</div>";
         detailDiv.innerHTML = html;
-
         setTimeout(()=> detailDiv.classList.add("open"), 10);
     });
 }
