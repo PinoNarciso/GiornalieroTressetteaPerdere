@@ -23,7 +23,8 @@ body {
 }
 h2 { text-align:center; color:#1a73e8; margin-bottom:15px;}
 
-.tables-scroll {
+/* Contenitore scrollabile per tavoli e tabelle storico */
+.tables-scroll, .hands-history {
     overflow-x: auto;
     width: 100%;
 }
@@ -71,8 +72,8 @@ h2 { text-align:center; color:#1a73e8; margin-bottom:15px;}
 .eliminated { text-decoration:line-through; color:#aaa; }
 
 .hands-history table {
-    width:100%;
-    border-collapse:collapse;
+    width: max-content; /* permette scroll orizzontale se serve */
+    border-collapse: collapse;
     margin-top:5px;
     font-size:12px;
 }
