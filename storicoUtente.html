@@ -44,7 +44,7 @@ h2 {
     margin:12px 0;
     border-radius:8px;
     width:100%;
-    overflow-x:auto; /* scroll se necessario */
+    overflow-x:auto;
 }
 
 .players-list {
@@ -60,23 +60,24 @@ h2 {
     font-size:14px;
     color:#444;
     width:100%;
+    gap:8px;
 }
 
 .player-name {
-    flex:2 1 auto;
-    margin-right:8px;
-    white-space: normal; /* permettere più righe, non troncare */
+    flex:0 1 auto;           /* larghezza minima necessaria, cresce se serve */
+    white-space: normal;     /* permette più righe */
     word-wrap: break-word;
 }
 
 .dots {
-    flex:1 1 auto;
+    flex:1 1 auto;           /* si allunga per occupare tutto lo spazio disponibile */
     border-bottom:2px dotted #bbb;
-    margin:0 8px;
+    height:0;
 }
 
 .player-score {
-    flex:0 0 40px;
+    flex:0 0 auto;           /* mantiene dimensione necessaria per il punteggio */
+    min-width:35px;
     text-align:left;
     font-weight:bold;
     color:#1a73e8;
@@ -91,7 +92,7 @@ h2 {
 .hands-history {
     font-size:13px;
     margin-top:10px;
-    overflow-x:auto; /* barra di scorrimento orizzontale */
+    overflow-x:auto;
 }
 
 .hands-history table {
@@ -210,7 +211,7 @@ p.empty {
 <script src="firebase.js"></script>
 
 <script>
-// stesso JS di prima, nulla cambia
+// stesso JS di prima
 function mostraStorico(){
     const list = document.getElementById("storico-list");
     list.innerHTML = '<div id="loading-msg">Caricamento storico...</div>';
