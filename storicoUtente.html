@@ -44,9 +44,9 @@ h2 {
     margin:12px 0;
     border-radius:8px;
     width:100%;
+    overflow-x:auto; /* scroll se necessario */
 }
 
-/* GIOCATORI */
 .players-list {
     margin:8px 0;
     display:flex;
@@ -65,9 +65,8 @@ h2 {
 .player-name {
     flex:2 1 auto;
     margin-right:8px;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
+    white-space: normal; /* permettere più righe, non troncare */
+    word-wrap: break-word;
 }
 
 .dots {
@@ -92,12 +91,12 @@ h2 {
 .hands-history {
     font-size:13px;
     margin-top:10px;
-    overflow-x:auto;
+    overflow-x:auto; /* barra di scorrimento orizzontale */
 }
 
 .hands-history table {
     width:100%;
-    min-width:350px;
+    min-width:400px;
     border-collapse:collapse;
 }
 
@@ -211,6 +210,7 @@ p.empty {
 <script src="firebase.js"></script>
 
 <script>
+// stesso JS di prima, nulla cambia
 function mostraStorico(){
     const list = document.getElementById("storico-list");
     list.innerHTML = '<div id="loading-msg">Caricamento storico...</div>';
