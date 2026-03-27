@@ -5,27 +5,117 @@
 <title>Campionato Tressette a Perdere</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-body { font-family:'Segoe UI', sans-serif; background:#f0f2f5; padding:20px; display:flex; justify-content:center; }
-.card { background:white; padding:20px; border-radius:12px; width:100%; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
-h2 { text-align:center; color:#1a73e8; }
-.top-buttons{ text-align:center; margin-top:15px; }
-.top-buttons button{ padding:10px 15px; margin:5px; border:none; border-radius:6px; cursor:pointer; }
-.tables-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:15px; }
-.table { background:#f8f9fa; padding:12px; border-radius:8px; }
-.player-row { display:flex; align-items:center; }
-.player-name { max-width:60%; }
-.dots { flex:1; border-bottom:2px dotted #bbb; margin:0 6px; }
-.player-score { font-weight:bold; color:#1a73e8; }
-.hands-history table { width:100%; border-collapse:collapse; margin-top:5px; }
-.hands-history td, .hands-history th { border:1px solid #ccc; padding:3px; text-align:center; font-size:12px; }
-.eliminated { text-decoration:line-through; color:#aaa; }
-#storico-container{ margin-top:20px; display:none; }
+body {
+    font-family:'Segoe UI', sans-serif;
+    background:#f0f2f5;
+    padding:20px;
+    display:flex;
+    justify-content:center;
+}
+
+.card {
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    width:100%;
+    max-width:1200px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.1);
+}
+
+h2 { 
+    text-align:center; 
+    color:#1a73e8; 
+}
+
+.top-buttons {
+    text-align:center;
+    margin-top:15px;
+}
+
+.top-buttons button {
+    padding:10px 15px;
+    margin:5px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+.tables-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    gap:15px;
+}
+
+.table {
+    background:#f8f9fa;
+    padding:12px;
+    border-radius:8px;
+}
+
+.player-row {
+    display:flex;
+    align-items:center;
+    margin:3px 0;
+}
+
+.player-name {
+    max-width:60%;
+}
+
+.dots {
+    flex:1;
+    border-bottom:2px dotted #bbb;
+    margin:0 6px;
+}
+
+.player-score {
+    font-weight:bold;
+    color:#1a73e8;
+}
+
+.hands-history {
+    margin-top:5px;
+    overflow-x:auto; /* scroll orizzontale */
+}
+
+.hands-history table {
+    width: max-content;
+    min-width: 100%;
+    border-collapse:collapse;
+    font-size:12px;
+}
+
+.hands-history th, .hands-history td {
+    border:1px solid #ccc;
+    padding:3px;
+    text-align:center;
+    white-space:nowrap; /* nomi lunghi su una riga */
+}
+
+.eliminated {
+    text-decoration:line-through;
+    color:#aaa;
+}
+
+#storico-container{
+    margin-top:20px;
+    display:none;
+}
+
+#storico-dettaglio-wrapper {
+    overflow-x:auto;
+    width:100%;
+    margin-top:10px;
+}
+
+#storico-dettaglio {
+    min-width:600px;
+}
 </style>
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <script src="firebase.js"></script>
-
 
 </head>
 <body>
@@ -34,7 +124,6 @@ h2 { text-align:center; color:#1a73e8; }
 
 <!-- TAVOLI LIVE -->
 <div id="tables" class="tables-grid"></div>
-
 
 <!-- PULSANTI SOTTO LE TABELLE -->
 <div class="top-buttons">
@@ -48,7 +137,9 @@ h2 { text-align:center; color:#1a73e8; }
 <div id="storico-container">
     <input type="text" id="searchData" placeholder="🔍 Cerca data..." onkeyup="mostraStorico()">
     <div id="storico-list"></div>
-    <div id="storico-dettaglio"></div>
+    <div id="storico-dettaglio-wrapper">
+        <div id="storico-dettaglio"></div>
+    </div>
 </div>
 </div>
 
@@ -84,68 +175,41 @@ db.ref("tables").on("value", snap => {
             <div class="info">Limite punti: ${t.limit||0} | Vincitori: ${t.winners||0}</div>`;
         tablesDiv.appendChild(div);
 
-  db.ref(`tables/${id}/players`).on("value", snapPlayers=>{
-    let players = snapPlayers.val();
+        db.ref(`tables/${id}/players`).on("value", snapPlayers=>{
+            let players = snapPlayers.val();
+            let arr = [];
+            if (players) {
+                if (Array.isArray(players)) arr = players;
+                else arr = Object.values(players);
+            }
+            arr = arr.map(p => ({ name: p?.name || "—", score: p?.score ?? 0, playerHistory: Array.isArray(p?.playerHistory) ? p.playerHistory : [] }));
+            arr.sort((a,b)=>a.score - b.score);
+            const pDiv = document.getElementById(`players-${id}`);
+            pDiv.innerHTML = arr.map((p,i)=>`
+                <div class="player-row ${(p.score>=t.limit)?"eliminated":""}">
+                    <span>${i+1}. ${p.name}</span>
+                    <span class="dots"></span>
+                    <span>${p.score}</span>
+                </div>
+            `).join("");
 
-    // 🔧 Costruzione sicura array giocatori
-    let arr = [];
-    if (players) {
-        if (Array.isArray(players)) {
-            arr = players;
-        } else {
-            arr = Object.values(players);
-        }
-    }
-
-    // 🔧 Normalizza dati (evita undefined)
-    arr = arr.map(p => ({
-        name: p?.name || "—",
-        score: p?.score ?? 0,
-        playerHistory: Array.isArray(p?.playerHistory) ? p.playerHistory : []
-    }));
-
-    // 🔧 Ordina
-    arr.sort((a,b)=>a.score - b.score);
-
-    // 🔧 Visualizzazione giocatori
-    const pDiv = document.getElementById(`players-${id}`);
-    pDiv.innerHTML = arr.map((p,i)=>`
-        <div class="player-row ${(p.score>=t.limit)?"eliminated":""}">
-            <span>${i+1}. ${p.name}</span>
-            <span class="dots"></span>
-            <span>${p.score}</span>
-        </div>
-    `).join("");
-
-    // 🔧 Calcolo mani SICURO
-    const maxHands = arr.length > 0
-        ? Math.max(...arr.map(p => p.playerHistory.length))
-        : 0;
-
-    let html = "";
-
-    // 🔧 Se non ci sono mani → messaggio pulito
-    if(maxHands === 0){
-        html = "<div style='text-align:center;color:#999;font-size:12px;'>Nessuna mano giocata</div>";
-    } 
-    else {
-        html = "<table><tr><th>Mano</th>";
-        arr.forEach(p=> html += `<th>${p.name}</th>`);
-        html += "</tr>";
-
-        for(let i=0;i<maxHands;i++){
-            html += `<tr><td>${i+1}</td>`;
-            arr.forEach(p=>{
-                html += `<td>${p.playerHistory[i] ?? "-"}</td>`;
-            });
-            html += "</tr>";
-        }
-
-        html += "</table>";
-    }
-
-    document.getElementById(`hands-${id}`).innerHTML = html;
-});
+            const maxHands = arr.length > 0 ? Math.max(...arr.map(p => p.playerHistory.length)) : 0;
+            let html = "";
+            if(maxHands === 0){
+                html = "<div style='text-align:center;color:#999;font-size:12px;'>Nessuna mano giocata</div>";
+            } else {
+                html = "<table><tr><th>Mano</th>";
+                arr.forEach(p=> html += `<th>${p.name}</th>`);
+                html += "</tr>";
+                for(let i=0;i<maxHands;i++){
+                    html += `<tr><td>${i+1}</td>`;
+                    arr.forEach(p=> html += `<td>${p.playerHistory[i] ?? "-"}</td>`);
+                    html += "</tr>";
+                }
+                html += "</table>";
+            }
+            document.getElementById(`hands-${id}`).innerHTML = html;
+        });
     });
 });
 
@@ -157,27 +221,15 @@ function archiviaDati(){
             alert("Nessun dato da archiviare"); 
             return; 
         }
-
-        // Data precompilata leggibile
         const defaultData = getDataFormattata().replace(/-/g," ");
-        // Prompt per confermare o modificare
         const nomeStorico = prompt("Confermare o modificare la data per l'archivio:", defaultData);
-        if(!nomeStorico) return; // annullato
-
-        // Sostituiamo eventuali spazi con - per path Firebase
+        if(!nomeStorico) return;
         const pathFirebase = nomeStorico.replace(/ /g,"-");
-
-        return db.ref("archivio/"+pathFirebase).set({ 
-            data: new Date().toISOString(), 
-            tables: data 
-        });
-    }).then(()=>{
-        alert("✅ Archiviato correttamente!");
-    }).catch(err=>{
-        console.error(err);
-        alert("Errore archiviazione");
-    });
+        return db.ref("archivio/"+pathFirebase).set({ data: new Date().toISOString(), tables: data });
+    }).then(()=>{ alert("✅ Archiviato correttamente!"); })
+    .catch(err=>{ console.error(err); alert("Errore archiviazione"); });
 }
+
 /* ===== MOSTRA STORICO ===== */
 function mostraStorico(){
     document.getElementById("storico-container").style.display="block";
@@ -250,14 +302,8 @@ function esportaArchivio(data){
     });
 }
 
-function goToTables(){
-    window.location.href = "index.html";
-}
-
-function goToAdmin(){
-    window.location.href = "admin.html";
-}
-
+function goToTables(){ window.location.href = "index.html"; }
+function goToAdmin(){ window.location.href = "admin.html"; }
 </script>
 </body>
 </html>
