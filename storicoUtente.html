@@ -2,159 +2,107 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<title>Storico Tressette</title>
+<title>Campionato Tressette a Perdere</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 body {
     font-family:'Segoe UI', sans-serif;
     background:#f0f2f5;
-    padding:10px;
-    margin:0;
+    padding:20px;
     display:flex;
     justify-content:center;
 }
-
 .card {
     background:white;
-    padding:15px;
+    padding:20px;
     border-radius:12px;
-    max-width:600px;
     width:100%;
+    max-width:1200px;
     box-shadow:0 4px 12px rgba(0,0,0,0.1);
 }
+h2 { text-align:center; color:#1a73e8; margin-bottom:15px;}
 
-h2 {
-    text-align:center;
-    color:#1a73e8;
-    margin-top:0;
+.tables-scroll {
+    overflow-x: auto;
+    width: 100%;
 }
 
-/* TAVOLI */
 .tables-grid {
-    display:flex;
-    flex-direction:column;
-    gap:12px;
+    display:grid;
+    grid-template-columns: repeat(3, 300px); /* larghezza fissa dei tavoli */
+    gap:15px;
+    margin-bottom:20px;
 }
 
 .table {
     background:#f8f9fa;
-    padding:10px 12px;
-    margin:12px 0;
+    padding:12px;
     border-radius:8px;
-    width:100%;
-    overflow-x:auto;
+    min-height:150px;
 }
 
-.players-list {
-    margin:8px 0;
-    display:flex;
-    flex-direction:column;
-    gap:6px;
-}
-
+/* GRID PERFETTA CON PUNTINI */
 .player-row {
-    display:flex;
+    display:grid;
+    grid-template-columns: auto 1fr 60px; /* nome | puntini | punteggio */
     align-items:center;
-    width:100%;
-    min-width:0; /* per evitare overflow */
-}
-
-.player-name {
-    white-space:nowrap;   /* rimane sulla stessa riga */
-    overflow:hidden;
-    text-overflow:ellipsis;
-    flex: 0 0 60%;         /* larghezza aumentata al 60% della riga */
-    margin-right:8px;
+    margin:2px 0;
     font-size:14px;
 }
 
+.player-name {
+    overflow:hidden;
+    white-space:nowrap;
+}
+
 .dots {
-    flex-grow:1;           /* occupa lo spazio rimanente tra nome e punteggio */
     border-bottom:2px dotted #bbb;
+    margin:0 6px;
     height:0;
-    margin:0 8px;
 }
 
 .player-score {
-    flex-shrink:0;
-    min-width:35px;
-    text-align:left;
     font-weight:bold;
     color:#1a73e8;
+    text-align:right;
 }
 
-.eliminated {
-    text-decoration:line-through;
-    color:#aaa;
-}
-
-/* STORICO MANI */
-.hands-history {
-    font-size:13px;
-    margin-top:10px;
-    overflow-x:auto;
-}
+.eliminated { text-decoration:line-through; color:#aaa; }
 
 .hands-history table {
     width:100%;
-    min-width:400px;
     border-collapse:collapse;
-}
-
-.hands-history th, 
-.hands-history td {
-    padding:4px 6px;
-    border:1px solid #ccc;
-    text-align:center;
+    margin-top:5px;
     font-size:12px;
 }
 
-/* LISTA STORICO */
-#storico-list div.archive-row {
-    margin:5px 0;
+.hands-history td, .hands-history th {
+    border:1px solid #ccc;
+    padding:3px;
+    text-align:center;
+}
+
+#storico-list div.archive-row{
+    margin:3px 0;
     display:flex;
-    flex-wrap:wrap;
     align-items:center;
     gap:5px;
 }
 
-#storico-list span {
-    flex:1 1 100%;
+#storico-list span{
+    flex:1;
     font-weight:bold;
     color:#1a73e8;
 }
 
-/* BOTTONI */
-button {
-    padding:6px 10px;
+#storico-list button{
+    padding:5px 10px;
+    border-radius:5px;
     border:none;
-    border-radius:6px;
+    cursor:pointer;
     background:#1a73e8;
     color:white;
-    cursor:pointer;
-    transition:0.2s;
-    font-size:14px;
-}
-
-button:hover {
-    background:#1557b0;
-}
-
-/* INPUT */
-input[type="text"] {
-    width:100%;
-    padding:8px;
-    margin-bottom:10px;
-    border-radius:6px;
-    border:1px solid #ccc;
-    font-size:14px;
-}
-
-p.empty {
-    color:#999;
-    text-align:center;
-    margin:10px 0;
 }
 
 #loading-msg {
@@ -163,44 +111,19 @@ p.empty {
     color:#555;
 }
 
-/* ANIMAZIONE DETTAGLI */
-.detail-row {
+.detail-row { margin-bottom:10px; }
+
+input#searchData {
+    width:100%;
+    padding:8px;
     margin-bottom:10px;
-    overflow:hidden;
-    max-height:0;
-    opacity:0;
-    transition:all 0.35s ease;
-}
-
-.detail-row.open {
-    max-height:2000px;
-    opacity:1;
-}
-
-/* RESPONSIVE MOBILE */
-@media (max-width:480px){
-    .card {
-        padding:10px;
-        max-width:100%;
-    }
-    .player-name, .player-score {
-        font-size:13px;
-    }
-    .hands-history table {
-        min-width:300px;
-    }
-    button {
-        font-size:13px;
-        padding:5px 8px;
-    }
-    input[type="text"] {
-        font-size:13px;
-        padding:6px;
-    }
+    border-radius:6px;
+    border:1px solid #ccc;
+    box-sizing:border-box;
 }
 </style>
 
-<!-- LIBRERIE -->
+<!-- Librerie -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -209,6 +132,7 @@ p.empty {
 <script src="firebase.js"></script>
 
 <script>
+/* ===== MOSTRA STORICO ===== */
 function mostraStorico(){
     const list = document.getElementById("storico-list");
     list.innerHTML = '<div id="loading-msg">Caricamento storico...</div>';
@@ -217,38 +141,32 @@ function mostraStorico(){
     db.ref("archivio").once("value").then(snap=>{
         const archivi = snap.val()||{};
         let html = "";
-
         Object.keys(archivi).sort().reverse().forEach(d=>{
             if(filtro && !d.toLowerCase().includes(filtro)) return;
-            html += `
-            <div id="row-${d}" class="archive-row">
+
+            html += `<div id="row-${d}" class="archive-row">
                 <span>Partita di ${d.replace(/-/g," ")}</span>
                 <button id="btn-${d}" onclick="visualizzaArchivio('${d}')">Visualizza</button>
                 <button onclick="esportaArchivio('${d}')">⬇ Excel</button>
                 <button onclick="esportaArchivioPDF('${d}')">⬇ PDF</button>
             </div>`;
         });
-
         list.innerHTML = html || '<div id="loading-msg">Nessun storico disponibile</div>';
     });
 }
 
+/* ===== VISUALIZZA / NASCONDI DETTAGLIO ===== */
 function visualizzaArchivio(data){
     const row = document.getElementById(`row-${data}`);
     let detailDiv = document.getElementById(`detail-${data}`);
 
     if(detailDiv){
-        detailDiv.classList.remove("open");
-        setTimeout(()=> detailDiv.remove(), 300);
+        detailDiv.remove();
         document.getElementById(`btn-${data}`).textContent = "Visualizza";
         return;
     }
 
-    document.querySelectorAll(".detail-row").forEach(d=>{
-        d.classList.remove("open");
-        setTimeout(()=> d.remove(), 300);
-    });
-
+    document.querySelectorAll(".detail-row").forEach(d=>d.remove());
     document.querySelectorAll("#storico-list button").forEach(b=>{
         if(b.id.startsWith("btn-")) b.textContent = "Visualizza";
     });
@@ -263,29 +181,22 @@ function visualizzaArchivio(data){
 
     db.ref("archivio/"+data).once("value").then(snap=>{
         const tables = snap.val()?.tables || {};
-
         if(Object.keys(tables).length===0){
             detailDiv.innerHTML='<div id="loading-msg">Nessun tavolo disponibile</div>';
-            detailDiv.classList.add("open");
             return;
         }
 
-        let html='<div class="tables-grid">';
+        let html='<div class="tables-scroll"><div class="tables-grid">';
         Object.values(tables).forEach(t=>{
             let arr = Object.values(t.players || []);
-
-            html+=`<div class="table">
-                        <b>${t.name}</b>
-                        <div class="players-list">`;
+            html+=`<div class="table"><b>${t.name}</b>`;
 
             if(arr.length===0){
-                html+='<p class="empty">Nessun giocatore</p></div>'; 
+                html+='<p>Nessun giocatore</p>';
             } else {
                 arr.sort((a,b)=>(a.score||0)-(b.score||0));
-
                 arr.forEach((p,i)=>{
-                    html+=`
-                    <div class="player-row ${(p.score>=t.limit)?"eliminated":""}">
+                    html+=`<div class="player-row ${(p.score>=t.limit)?"eliminated":""}">
                         <span class="player-name">${i+1}. ${p.name}</span>
                         <span class="dots"></span>
                         <span class="player-score">${p.score}</span>
@@ -293,57 +204,156 @@ function visualizzaArchivio(data){
                 });
 
                 const maxHands = Math.max(...arr.map(p=>(p.playerHistory||[]).length));
-                html+='</div>'; // fine players-list
-
                 if(maxHands>0){
-                    html+=`
-                    <div class="hands-history">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Mano</th>`;
-                    arr.forEach(p=> html+=`<th>${p.name}</th>`);
-                    html+=`</tr></thead><tbody>`;
-
+                    html+="<div class='hands-history'><table><tr><th>Mano</th>";
+                    arr.forEach(p=>html+=`<th>${p.name}</th>`);
+                    html+="</tr>";
                     for(let i=0;i<maxHands;i++){
                         html+=`<tr><td>${i+1}</td>`;
-                        arr.forEach(p=>{
-                            html+=`<td>${p.playerHistory?.[i] ?? "-"}</td>`;
-                        });
-                        html+=`</tr>`;
+                        arr.forEach(p=>html+=`<td>${p.playerHistory?.[i]??"-"}</td>`);
+                        html+="</tr>";
                     }
-
-                    html+=`</tbody></table></div>`;
+                    html+="</table></div>";
                 }
             }
 
-            html+=`</div>`; // fine table
+            html+="</div>";
         });
-
-        html+="</div>";
+        html+="</div></div>"; // chiude tables-grid e tables-scroll
         detailDiv.innerHTML = html;
-        setTimeout(()=> detailDiv.classList.add("open"), 10);
     });
 }
 
-function esportaArchivio(data){ alert("Excel esportato"); }
-function esportaArchivioPDF(data){ alert("PDF esportato"); }
-function goToTables(){ window.location.href = "index.html"; }
+/* ===== EXPORT EXCEL ===== */
+function esportaArchivio(data){
+    db.ref("archivio/"+data).once("value").then(snap=>{
+        const tables = snap.val()?.tables || {};
+        let rows = [];
+        let maxHands = 0;
+
+        Object.values(tables).forEach(t=>{
+            Object.values(t.players||{}).forEach(p=>{
+                if(p.playerHistory) maxHands = Math.max(maxHands, p.playerHistory.length);
+            });
+        });
+
+        let headers = ["Tavolo","Giocatore","Punti"];
+        for(let i=1;i<=maxHands;i++) headers.push(`Mano ${i}`);
+        rows.push(headers);
+
+        Object.values(tables).forEach(t=>{
+            Object.values(t.players||{}).forEach(p=>{
+                let riga = [t.name, p.name, p.score];
+                for(let i=0;i<maxHands;i++){
+                    riga.push(p.playerHistory?.[i] ?? "");
+                }
+                rows.push(riga);
+            });
+        });
+
+        if(rows.length === 1){
+            alert("Nessun dato disponibile");
+            return;
+        }
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        XLSX.utils.book_append_sheet(wb, ws, "Storico");
+        XLSX.writeFile(wb, `storico_${data}.xlsx`);
+    });
+}
+
+/* ===== EXPORT PDF ===== */
+function esportaArchivioPDF(data){
+    db.ref("archivio/"+data).once("value").then(snap=>{
+        const tables = snap.val()?.tables || {};
+        if(Object.keys(tables).length===0){ alert("Nessun dato disponibile"); return; }
+
+        let html = '<div class="tables-scroll"><div class="tables-grid">';
+        Object.values(tables).forEach(t=>{
+            let arr = Object.values(t.players || []);
+            html+=`<div class="table"><b>${t.name}</b>`;
+            if(arr.length===0){
+                html+='<p>Nessun giocatore</p>';
+            } else {
+                arr.sort((a,b)=>(a.score||0)-(b.score||0));
+                arr.forEach((p,i)=>{
+                    html+=`<div class="player-row ${(p.score>=t.limit)?"eliminated":""}">
+                        <span class="player-name">${i+1}. ${p.name}</span>
+                        <span class="dots"></span>
+                        <span class="player-score">${p.score}</span>
+                    </div>`;
+                });
+                const maxHands = Math.max(...arr.map(p=>(p.playerHistory||[]).length));
+                if(maxHands>0){
+                    html+="<div class='hands-history'><table><tr><th>Mano</th>";
+                    arr.forEach(p=>html+=`<th>${p.name}</th>`);
+                    html+="</tr>";
+                    for(let i=0;i<maxHands;i++){
+                        html+=`<tr><td>${i+1}</td>`;
+                        arr.forEach(p=>html+=`<td>${p.playerHistory?.[i]??"-"}</td>`);
+                        html+="</tr>";
+                    }
+                    html+="</table></div>";
+                }
+            }
+            html+="</div>";
+        });
+        html+="</div></div>"; // chiude tables-grid e tables-scroll
+
+        const tempDiv = document.createElement('div');
+        tempDiv.style.position = 'absolute';
+        tempDiv.style.left = '-9999px';
+        tempDiv.innerHTML = html;
+        document.body.appendChild(tempDiv);
+
+        html2canvas(tempDiv, { scale:2 }).then(canvas=>{
+            const imgData = canvas.toDataURL('image/png');
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p','pt','a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const imgWidth = pdfWidth;
+            const imgHeight = canvas.height * pdfWidth / canvas.width;
+            let heightLeft = imgHeight;
+            let position = 0;
+
+            pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+            heightLeft -= pdfHeight;
+
+            while(heightLeft > 0){
+                position = heightLeft - imgHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pdfHeight;
+            }
+
+            pdf.save(`storico_${data}.pdf`);
+            document.body.removeChild(tempDiv);
+        });
+    });
+}
+
+function goToTables(){
+    window.location.href = "index.html";
+}
+
 document.addEventListener("DOMContentLoaded", ()=>mostraStorico());
 </script>
-
 </head>
-<body>
 
+<body>
 <div class="card">
 <h2>Storico Partite</h2>
+
 <div style="text-align:center; margin-bottom:10px;">
-    <button onclick="goToTables()">⬅️ Torna ai Tavoli</button>
+    <button onclick="goToTables()" style="background:#1a73e8;color:white;padding:10px 15px;border:none;border-radius:6px;cursor:pointer;">
+        ⬅️ Torna ai Tavoli
+    </button>
 </div>
 
 <input type="text" id="searchData" placeholder="🔍 Filtra data..." oninput="mostraStorico()">
 <div id="storico-list"></div>
-
 </div>
 </body>
 </html>
