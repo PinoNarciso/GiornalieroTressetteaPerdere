@@ -258,10 +258,12 @@ p.empty {
 <!-- Modale Login Admin -->
 <div id="adminModal" class="admin-modal">
     <div class="admin-modal-content">
-        <h3>Login Admin</h3>
+        <h3>Inserisci la Password del Tavolo</h3>
         <div class="password-container">
             <input id="adminPasswordInput" type="password" placeholder="Inserisci password">
             <button type="button" id="togglePassword" title="Mostra/Nascondi Password">👁️</button>
+
+
         </div>
         <div class="btn-group">
             <button id="adminCancelBtn" class="btn-cancel">Annulla</button>
@@ -390,6 +392,14 @@ document.getElementById("adminSubmitBtn").addEventListener("click", () => {
 document.getElementById("togglePassword").addEventListener("click", () => {
     const input = document.getElementById("adminPasswordInput");
     input.type = input.type === "password" ? "text" : "password";
+});
+
+// Invio da tastiera attiva il login
+document.getElementById("adminPasswordInput").addEventListener("keydown", function(e){
+    if(e.key === "Enter"){
+        e.preventDefault(); // Previene il comportamento predefinito del form
+        document.getElementById("adminSubmitBtn").click();
+    }
 });
 
 document.getElementById("adminModal").addEventListener("click", (e) => {
